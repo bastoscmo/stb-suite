@@ -1,18 +1,82 @@
+#!/usr/bin/env python
 
 #################################################
-# Siesta Structure Translator -sstranslator     #
+# Siesta Tool Box - Translate                   #
 # version 1.0.1                                 #
 # UnB - 2025/02/05                              #
-#                                               #
-#                                               #
 # Dr. Carlos M. O. Bastos                       #
 #################################################
 
+VERSION = "1.5.10"
 
-# Import libraries
-import numpy as np
-from pymatgen.core import SiteCollection, Structure
+import os
+import sys
+import warnings
+import subprocess
+from time import sleep
+import argparse
+import textwrap
+from typing import List, Dict
+import argparse
 from pymatgen.core.periodic_table import Element
+from pymatgen.core import SiteCollection, Structure
+import numpy as np
+
+
+# Cores ANSI para terminal
+COLORS = {
+    'reset': '\033[0m',
+    'cyan': '\033[96m',
+    'blue': '\033[94m',
+    'green': '\033[92m',
+    'yellow': '\033[93m',
+    'red': '\033[91m',
+    'bold': '\033[1m',
+    'underline': '\033[4m'
+}
+
+def color_text(text: str, color: str) -> str:
+    """Retorna texto formatado com cor ANSI"""
+    return f"{COLORS[color]}{text}{COLORS['reset']}"
+
+def show_intro() -> None:
+    """Exibe a introdução estilizada da STB-SUITE"""
+    os.system('cls' if os.name == 'nt' else 'clear')
+    
+    logo = color_text(r"""
+.----------------.  .----------------.  .----------------.
+| .--------------. || .--------------. || .--------------. |
+| |    _______   | || |  _________   | || |   ______     | |
+| |   /  ___  |  | || | |  _   _  |  | || |  |_   _ \    | |
+| |  |  (__ \_|  | || | |_/ | | \_|  | || |    | |_) |   | |
+| |   '.___`-.   | || |     | |      | || |    |  __'.   | |
+| |  |`\____) |  | || |    _| |_     | || |   _| |__) |  | |
+| |  |_______.'  | || |   |_____|    | || |  |_______/   | |
+| |              | || |              | || |              | |
+| '--------------' || '--------------' || '--------------' |
+ '----------------'  '----------------'  '----------------'
+ """, 'cyan')
+
+    description = [
+        "Siesta ToolBox Suite",
+        "A comprehensive toolkit for SIESTA DFT simulations",
+        f"Version {VERSION} | University of Brasilia - 2025",
+        "Developed by Dr. Carlos M. O. Bastos"
+    ]
+
+    print(logo)
+    print("\n" + "="*60)
+    for line in description:
+        print(line.center(60))
+        sleep(0.2)
+    print("="*60 + "\n")
+    return
+
+# Import libraries:
+
+# Supported formats
+INPUT_FORMATS = {"poscar", "cif", "siesta", "xyz", "fhi", "dftb", "xsf"}
+OUTPUT_FORMATS = {"cif","xyz", "poscar", "fdf", "dftb", "xsf", "fhi"}
 
 
 # Dictionary with all periodic elements table
@@ -149,6 +213,7 @@ def readfile(filedata):
                 ]
     return data
 
+
 def dic_atoms_position(atomsposition):
     dic_atomspos = {}
     for elt in atomsposition:
@@ -186,8 +251,6 @@ def getatomsandvectors_xyz(dataxyz, latticedata):
                 cont = cont+1
         elem.append(str(cont))
     atomic_position = dic_atoms_position(atomsposition)
-    print("------------ Read file --------")
-    print("--- sucess")
     return typevectors, latticeparameter, vectors, getatoms, atomic_position
 
 
@@ -200,18 +263,14 @@ def getatomsandvectors_vasp(poscar):
     typevectors = datavasp[7][0]
     getatoms = []
     for i in range(len(datavasp[5])):
-        getatoms.append([i+1, element[datavasp[5][i]],
-                         datavasp[5][i], datavasp[6][i]])
+        getatoms.append([i+1, element[datavasp[5][i]],datavasp[5][i], datavasp[6][i]])
     atomsposition = []
+    cont = 8 
     for el in getatoms:
-        cont = 9
         for i in range(int(el[3])):
-            atomsposition.append(
-                [el[2], datavasp[cont][0], datavasp[cont][1], datavasp[cont][2]])
+            atomsposition.append([el[2], datavasp[cont][0], datavasp[cont][1], datavasp[cont][2]])
             cont = cont+1
     atomic_position = dic_atoms_position(atomsposition)
-    print("------------ Read file --------")
-    print("--- sucess")
     return typevectors, latticeparameter, vectors, getatoms, atomic_position
 
 
@@ -243,8 +302,6 @@ def getatomsandvectors_cif(input_cif):
     for line in structure.lattice.matrix:
         vectors.append([f"{line[0]:.8f}", f"{line[1]:.8f}", f"{line[2]:.8f}"])
     coord = structure.cart_coords
-    print("------------ Read file --------")
-    print("--- sucess")
     return typevectors, latticeparameter, vectors, getatoms, atomic_position
 
 
@@ -280,8 +337,6 @@ def getatomsandvectors_fhi(input_fhi):
         icont = icont+1
     atomic_position = atomdata
 
-    print("------------ Read file --------")
-    print("--- sucess")
     return typevectors, latticeparameter, vectors, getatoms, atomic_position
 
 
@@ -308,37 +363,35 @@ def getatomsandvectors_siesta(input_siesta):
             atomic_position[atomicnumber[position[1]]] = []
         atomic_position[atomicnumber[position[1]]].append(
             [position[2], position[3], position[4]])
-    print("------------ Read file --------")
-    print("--- sucess")
     return typevectors, latticeparameter, vectors, getatoms, atomic_position
+
 
 def getatomsandvectors_dftb(input_dftb):
     element, atomicnumber = periodic_table()
     datadftb = readfile(input_dftb)
     vectors = []
-    getatoms= []
-    atomic_position= {}
+    getatoms = []
+    atomic_position = {}
     dic_data = {}
     latticeparameter = "1.00"
     if datadftb[0][1] == 'S':
         typevectors = 'Cartesian'
-    elif datadftb[0][1]=='F':
+    elif datadftb[0][1] == 'F':
         typevectors = 'Direct'
     else:
-        print("------ type of coordinate not define ------")
-        print(" Only S or F are accepted")
-        print("--------------------------------------------")
+        print("[FAIL] Type of coordinate not define: Only S or F are accepted")
         exit()
-    for i in range(1,4):
+    for i in range(1, 4):
         vectors.append([f"{float(datadftb[-i][0]):.8f}",
                         f"{float(datadftb[-i][1]):.8f}",
                         f"{float(datadftb[-i][2]):.8f}"])
-    icont=0
+    icont = 0
     dic_data = {f"{i + 1}": elem for i, elem in enumerate(datadftb[1])}
     for line in datadftb[2:-4]:
-        atomic_position.setdefault(dic_data[line[1]],[])
-        atomic_position[dic_data[line[1]]].append([f"{float(line[2]):.8f}",f"{float(line[3]):.8f}",f"{float(line[4]):.8f}"])
-    icont=1
+        atomic_position.setdefault(dic_data[line[1]], [])
+        atomic_position[dic_data[line[1]]].append(
+            [f"{float(line[2]):.8f}", f"{float(line[3]):.8f}", f"{float(line[4]):.8f}"])
+    icont = 1
     for el in atomic_position:
         getatoms.append([f"{icont}",
                          f"{element[el]}",
@@ -346,39 +399,36 @@ def getatomsandvectors_dftb(input_dftb):
                          f"{len(atomic_position[el])}"])
         icont = icont+1
 
-    print("------------ Read file --------")
-    print("--- sucess")
     return typevectors, latticeparameter, vectors, getatoms, atomic_position
 
+
 def getatomsandvectors_xsf(input_xsf):
-    print("------------ warning --------")
-    print(" only for PRIMVEC format")
-    print("-----------------------------\n")
+    print("[WARNING] Only for PRIMVEC format")
     element, atomicnumber = periodic_table()
     dataxsf = readfile(input_xsf)
     vectors = []
-    getatoms= []
-    atomic_position= {}
+    getatoms = []
+    atomic_position = {}
     dic_data = {}
     latticeparameter = "1.00"
-    typevectors='Cartesian'
+    typevectors = 'Cartesian'
     dataxsf = [v for v in dataxsf if not str(v[0]).startswith("#")]
     for j in range(len(dataxsf)):
         if dataxsf[j][0] == 'PRIMVEC':
-            for i in range(1,4):
+            for i in range(1, 4):
                 vectors.append([f"{float(dataxsf[j+i][0]):.8f}",
                                 f"{float(dataxsf[j+i][1]):.8f}",
                                 f"{float(dataxsf[j+i][2]):.8f}"])
     for j in range(len(dataxsf)):
         if dataxsf[j][0] == 'PRIMCOORD':
-            na=dataxsf[j+1][0]
+            na = dataxsf[j+1][0]
             for i in range(int(na)):
-                atomic_position.setdefault(atomicnumber[dataxsf[j+i+2][0]],[])
+                atomic_position.setdefault(atomicnumber[dataxsf[j+i+2][0]], [])
                 atomic_position[atomicnumber[dataxsf[j+i+2][0]]].append(
                     [f"{float(dataxsf[j+i+2][1]):.8f}",
                      f"{float(dataxsf[j+i+2][2]):.8f}",
                      f"{float(dataxsf[j+i+2][3]):.8f}"])
-    icont=1
+    icont = 1
     for el in atomic_position:
         getatoms.append([f"{icont}",
                          f"{element[el]}",
@@ -386,13 +436,12 @@ def getatomsandvectors_xsf(input_xsf):
                          f"{len(atomic_position[el])}"])
         icont = icont+1
 
-    print("------------ Read file --------")
-    print("--- sucess")
     return typevectors, latticeparameter, vectors, getatoms, atomic_position
 
 ###################### Write functions ################
 
-def writefilefdf(typevectors, latticeparameter, vectors, getatoms, atomsposition,outfilename):
+
+def writefilefdf(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename):
     numberofatoms = 0
     for lin in getatoms:
         numberofatoms = numberofatoms+int(lin[3])
@@ -424,7 +473,7 @@ def writefilefdf(typevectors, latticeparameter, vectors, getatoms, atomsposition
     return
 
 
-def writefileposcar(typevectors, latticeparameter, vectors, getatoms, atomsposition,outfilename):
+def writefileposcar(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename):
     outfile = []
     outfile.append(
         '# automatic create using sstranslate')
@@ -449,16 +498,79 @@ def writefileposcar(typevectors, latticeparameter, vectors, getatoms, atomsposit
     np.savetxt(outfilename, outfile, fmt='%s')
     return
 
-def writefilexyz(typevectors, latticeparameter, vectors, getatoms, atomsposition,outfilename):
+    # Calcula ângulos entre vetores
+def angle(u, v):
+        cos_theta = np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
+        return np.degrees(np.arccos(np.clip(cos_theta, -1.0, 1.0)))
+        
+
+def writefilecif(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename):
+    """
+    Escreve um arquivo CIF no formato padrão.
+    """
+    vectors = np.array(vectors, dtype=float) * float(latticeparameter)
+
     outfile = []
-    sum=0
-    comment=""
+
+    outfile.append("data_generated")
+    outfile.append("_symmetry_space_group_name_H-M   'P 1'")
+    outfile.append("_symmetry_Int_Tables_number      1")
+    outfile.append("_cell_length_a    {:.8f}".format(np.linalg.norm(vectors[0])))
+    outfile.append("_cell_length_b    {:.8f}".format(np.linalg.norm(vectors[1])))
+    outfile.append("_cell_length_c    {:.8f}".format(np.linalg.norm(vectors[2])))
+
+    alpha = angle(vectors[1], vectors[2])
+    beta = angle(vectors[0], vectors[2])
+    gamma = angle(vectors[0], vectors[1])
+
+    outfile.append("_cell_angle_alpha  {:.8f}".format(alpha))
+    outfile.append("_cell_angle_beta   {:.8f}".format(beta))
+    outfile.append("_cell_angle_gamma  {:.8f}".format(gamma))
+    outfile.append(" ")
+
+    outfile.append("loop_")
+    outfile.append("_symmetry_equiv_pos_as_xyz")
+    outfile.append("  'x, y, z'")
+    outfile.append(" ")
+
+    outfile.append("loop_")
+    outfile.append("_atom_site_label")
+    outfile.append("_atom_site_type_symbol")
+    outfile.append("_atom_site_fract_x")
+    outfile.append("_atom_site_fract_y")
+    outfile.append("_atom_site_fract_z")
+
+    # Conversão de coordenadas cartesianas para fracionárias, se necessário
+    inv_lattice = np.linalg.inv(vectors)
+
+    for elem in getatoms:
+        for pos in atomsposition[elem[2]]:
+            if typevectors.lower() == 'direct':
+                xf, yf, zf = map(float, pos)
+            elif typevectors.lower() == 'cartesian':
+                cart = np.array([float(pos[0]), float(pos[1]), float(pos[2])])
+                fract = np.dot(inv_lattice, cart)
+                xf, yf, zf = fract
+            outfile.append(
+                f"{elem[2]}   {elem[2]}   {xf:.8f}   {yf:.8f}   {zf:.8f}"
+            )
+
+    np.savetxt(outfilename, outfile, fmt='%s')
+    return
+
+
+
+
+def writefilexyz(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename):
+    outfile = []
+    sum = 0
+    comment = ""
     for el in getatoms:
-        comment=comment+f"{el[2]}{el[3]} "
-        sum=sum+int(el[3])
+        comment = comment+f"{el[2]}{el[3]} "
+        sum = sum+int(el[3])
     outfile.append(f"{sum}")
     outfile.append(comment)
-    vectors=np.array(vectors,dtype="float")*float(latticeparameter)
+    vectors = np.array(vectors, dtype="float")*float(latticeparameter)
     if typevectors == 'Cartesian':
         for elem in getatoms:
             for position in atomsposition[elem[2]]:
@@ -467,57 +579,52 @@ def writefilexyz(typevectors, latticeparameter, vectors, getatoms, atomsposition
     elif typevectors == 'Direct':
         for elem in getatoms:
             for position in atomsposition[elem[2]]:
-                vcart=np.dot(np.array(vectors,dtype="float"),
-                              np.array(position,dtype='float'))
+                vcart = np.dot(np.array(vectors, dtype="float"),
+                               np.array(position, dtype='float'))
                 outfile.append(
                     f"{elem[2]}   {float(vcart[0]):.8f}   {float(vcart[1]):.8f}   {float(vcart[2]):.8f}")
     np.savetxt(outfilename, outfile, fmt='%s')
-    print("------------ Write file -------")
-    print("--- sucess")
-    print ("------------------------------")
     return
 
 
-def writefiledftb(typevectors, latticeparameter, vectors, getatoms, atomsposition,outfilename):
+def writefiledftb(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename):
     outfile = []
-    sum=0
-    comment=""
+    sum = 0
+    comment = ""
     for el in getatoms:
-        comment=comment+f"{el[2]}{el[3]} "
-        sum=sum+int(el[3])
+        comment = comment+f"{el[2]}{el[3]} "
+        sum = sum+int(el[3])
     if typevectors == 'Cartesian':
         outfile.append(f"{sum}   S")
     elif typevectors == 'Direct':
         outfile.append(f"{sum}   F")
-    atoms=""
+    atoms = ""
     for i in range(len(getatoms)):
-        atoms=atoms + f"{getatoms[i][2]}   "
+        atoms = atoms + f"{getatoms[i][2]}   "
     outfile.append(atoms)
 
-    icont=1
+    icont = 1
     for elem in getatoms:
         for position in atomsposition[elem[2]]:
             outfile.append(
                 f"    {icont}  {elem[0]}  {position[0]}   {position[1]}   {position[2]}")
-            icont=icont+1
+            icont = icont+1
     outfile.append(f"    0.00000000  0.00000000 0.00000000")
-    vectors=np.array(vectors,dtype="float")*float(latticeparameter)
+    vectors = np.array(vectors, dtype="float")*float(latticeparameter)
     for i in range(3):
         outfile.append(f"    {vectors[i][0]:.8f}   {vectors[i][1]:.8f}   {vectors[i][2]:.8f}")
     np.savetxt(outfilename, outfile, fmt='%s')
-    print("------------ Write file -------")
-    print("--- sucess")
-    print ("------------------------------")
     return
 
-def writefilexsf(typevectors, latticeparameter, vectors, getatoms, atomsposition,outfilename):
+
+def writefilexsf(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename):
     outfile = []
-    sum=0
-    comment=""
+    sum = 0
+    comment = ""
     for el in getatoms:
-        comment=comment+f"{el[2]}{el[3]} "
-        sum=sum+int(el[3])
-    vectors=np.array(vectors,dtype="float")*float(latticeparameter)
+        comment = comment+f"{el[2]}{el[3]} "
+        sum = sum+int(el[3])
+    vectors = np.array(vectors, dtype="float")*float(latticeparameter)
     outfile.append('# create by stb-translate ')
     outfile.append(f'# {comment}\n')
     outfile.append('CRYSTAL')
@@ -536,24 +643,20 @@ def writefilexsf(typevectors, latticeparameter, vectors, getatoms, atomsposition
         outfile.append(f"{sum}  1")
         for elem in getatoms:
             for position in atomsposition[elem[2]]:
-                vcart=np.dot(np.array(vectors,dtype="float"),
-                              np.array(position,dtype='float'))
-                outfile.append(
-                    f"{elem[1]}   {float(vcart[0]):.8f}   {float(vcart[1]):.8f}   {float(vcart[2]):.8f}")
+                vcart = np.dot(np.array(vectors, dtype="float"),np.array(position, dtype='float'))
+                outfile.append(f"{elem[1]}   {float(vcart[0]):.8f}   {float(vcart[1]):.8f}   {float(vcart[2]):.8f}")
     np.savetxt(outfilename, outfile, fmt='%s')
-    print("------------ Write file -------")
-    print("--- sucess")
-    print ("------------------------------")
     return
 
-def writefilefhi(typevectors, latticeparameter, vectors, getatoms, atomsposition,outfilename):
+
+def writefilefhi(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename):
     outfile = []
-    sum=0
-    comment=""
+    sum = 0
+    comment = ""
     for el in getatoms:
-        comment=comment+f"{el[2]}{el[3]} "
-        sum=sum+int(el[3])
-    vectors=np.array(vectors,dtype="float")*float(latticeparameter)
+        comment = comment+f"{el[2]}{el[3]} "
+        sum = sum+int(el[3])
+    vectors = np.array(vectors, dtype="float")*float(latticeparameter)
     for vector in vectors:
         outfile.append(f"lattice_vector   {vector[0]:.8f}   {vector[1]:.8f}   {vector[2]:.8f}")
     outfile.append(" ")
@@ -568,8 +671,106 @@ def writefilefhi(typevectors, latticeparameter, vectors, getatoms, atomsposition
                 outfile.append(
                     f"atom_frac   {position[0]}   {position[1]}   {position[2]}   {elem[2]}")
     np.savetxt(outfilename, outfile, fmt='%s')
-    print("------------ Write file -------")
-    print("--- sucess")
-    print ("------------------------------")
     return
 
+
+def main():
+
+    parser = argparse.ArgumentParser(
+        description="File format converter using stb-translate."
+    )
+
+    parser.add_argument("-if", "--in-format", required=True, choices=INPUT_FORMATS,
+                        help="Input file format (options: poscar, cif, siesta, xyz, fhi, dftb, xsf)")
+    parser.add_argument("-i", "--in-file", required=True,
+                        help="Path to the input file")
+    parser.add_argument("-of", "--out-format", required=True, choices=OUTPUT_FORMATS,
+                        help="Output file format (options: cif , xyz, poscar, fdf, dftb, xsf, fhi)")
+    parser.add_argument("-o", "--out-file", required=True,
+                        help="Path to the output file")
+    parser.add_argument(
+        "--lattice", help="Lattice vectors file, required only for XYZ output")
+    parser.add_argument("-v", "--version", action="version",
+                        version=f"stb-translate {VERSION}")
+    parser.add_argument("--no-intro", dest="intro", action="store_false", help="Do not show the introduction")
+
+    args = parser.parse_args()
+
+
+    if args.intro == True:
+        show_intro()
+
+    print("\n" + color_text("TRANSLATE:", 'bold'))
+    print("-"*60)
+
+
+
+
+    # Validate lattice parameter requirement
+    if args.in_format == "xyz" and not args.lattice:
+        parser.error(
+            "The --lattice argument is required when input format is XYZ.")
+
+    print(f"\n[INFO] Converting {args.in_file} ({args.in_format}) to {args.out_file} ({args.out_format})...")
+
+    if args.out_format == "xyz":
+        print(f"[INFO] Lattice vector file: {args.lattice}")
+
+    match (args.in_format):
+        case "poscar":
+            typevectors, latticeparameter, vectors, getatoms, atomsposition = getatomsandvectors_vasp(
+                args.in_file)
+        case "cif":
+            typevectors, latticeparameter, vectors, getatoms, atomsposition = getatomsandvectors_cif(
+                args.in_file)
+        case "siesta":
+            typevectors, latticeparameter, vectors, getatoms, atomsposition = getatomsandvectors_siesta(
+                args.in_file)
+        case "xyz":
+            typevectors, latticeparameter, vectors, getatoms, atomsposition = getatomsandvectors_xyz(
+                args.in_file, args.lattice)
+        case "fhi":
+            typevectors, latticeparameter, vectors, getatoms, atomsposition = getatomsandvectors_fhi(
+                args.in_file)
+        case "dftb":
+            typevectors, latticeparameter, vectors, getatoms, atomsposition = getatomsandvectors_dftb(
+                args.in_file)
+        case "xsf":
+            typevectors, latticeparameter, vectors, getatoms, atomsposition = getatomsandvectors_xsf(
+                args.in_file)
+        
+
+    print(f"[OK] Read the file {args.in_file} ({args.in_format})")
+
+    match (args.out_format):
+        case "xyz":
+            writefilexyz(typevectors, latticeparameter, vectors,
+                         getatoms, atomsposition, args.out_file)
+        case "poscar":
+            writefileposcar(typevectors, latticeparameter, vectors,
+                            getatoms, atomsposition, args.out_file)
+        case "fdf":
+            writefilefdf(typevectors, latticeparameter, vectors,
+                         getatoms, atomsposition, args.out_file)
+        case "dftb":
+            writefiledftb(typevectors, latticeparameter, vectors,
+                          getatoms, atomsposition, args.out_file)
+        case "xsf":
+            writefilexsf(typevectors, latticeparameter, vectors,
+                         getatoms, atomsposition, args.out_file)
+        case "fhi":
+            writefilefhi(typevectors, latticeparameter, vectors,
+                         getatoms, atomsposition, args.out_file)
+
+        case "cif":
+            writefilecif(typevectors, latticeparameter, vectors,
+                         getatoms, atomsposition, args.out_file)
+
+    print(f"[OK] Writing the file {args.out_file} ({args.out_format})")
+    
+    print("[INFO] Complete job!") 
+    print("\n"+"-"*60)
+    print(color_text("Converting input files is 10% coding, 90% crying.\n\n", 'bold'))
+
+if __name__ == "__main__":
+    main()

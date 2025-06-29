@@ -1,0 +1,5 @@
+[console_scripts]
+stb-bands = stb.bands:main
+stb-convdos = stb.convdos:main
+stb-structural = stb.structural:main
+stb-translate = stb.translate:main

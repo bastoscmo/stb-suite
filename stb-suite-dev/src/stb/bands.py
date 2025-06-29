@@ -1,19 +1,77 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 #################################################
 # Siesta Tool Box - Bands                       #
-# version 1.0.0                                 #
+# version 1.5.1                                 #
 # University of Brasilia (UnB) - Brazil         #
 # version 1.0.0 2025/02/05                      #
 # Dr. Carlos M. O. Bastos                       #
 #################################################
 
-__version__ = "1.0.0"
+VERSION = "1.5.1"
 
+import os
+import sys
+import warnings
+import subprocess
+from time import sleep
+import argparse
+import textwrap
+from typing import List, Dict
 import numpy as np
 import re
 import argparse
 import matplotlib.pyplot as plt
+
+
+# Cores ANSI para terminal
+COLORS = {
+    'reset': '\033[0m',
+    'cyan': '\033[96m',
+    'blue': '\033[94m',
+    'green': '\033[92m',
+    'yellow': '\033[93m',
+    'red': '\033[91m',
+    'bold': '\033[1m',
+    'underline': '\033[4m'
+}
+
+def color_text(text: str, color: str) -> str:
+    """Retorna texto formatado com cor ANSI"""
+    return f"{COLORS[color]}{text}{COLORS['reset']}"
+
+def show_intro() -> None:
+    """Exibe a introdução estilizada da STB-SUITE"""
+    os.system('cls' if os.name == 'nt' else 'clear')
+    
+    logo = color_text(r"""
+.----------------.  .----------------.  .----------------.
+| .--------------. || .--------------. || .--------------. |
+| |    _______   | || |  _________   | || |   ______     | |
+| |   /  ___  |  | || | |  _   _  |  | || |  |_   _ \    | |
+| |  |  (__ \_|  | || | |_/ | | \_|  | || |    | |_) |   | |
+| |   '.___`-.   | || |     | |      | || |    |  __'.   | |
+| |  |`\____) |  | || |    _| |_     | || |   _| |__) |  | |
+| |  |_______.'  | || |   |_____|    | || |  |_______/   | |
+| |              | || |              | || |              | |
+| '--------------' || '--------------' || '--------------' |
+ '----------------'  '----------------'  '----------------'
+ """, 'cyan')
+
+    description = [
+        "Siesta ToolBox Suite",
+        "A comprehensive toolkit for SIESTA DFT simulations",
+        f"Version {VERSION} | University of Brasilia - 2025",
+        "Developed by Dr. Carlos M. O. Bastos"
+    ]
+
+    print(logo)
+    print("\n" + "="*60)
+    for line in description:
+        print(line.center(60))
+        sleep(0.2)
+    print("="*60 + "\n")
+    return
 
 def plot_gnuplot(high_sym):
 ######################### PDF Plot
@@ -132,7 +190,7 @@ def cbm_vbm(fermi_energy,high_sym,dic_bands):
     if len(above_fermi) > 0:
         cbm = min(cbm, np.nanmin(above_fermi))
     band_gap = cbm - vbm if cbm > vbm else 0.0  # Avoid negative values
-    print(f" **** Fermi: {fermi_energy} \n **** VBM: {vbm:.6f} \n **** CBM: {cbm:.6f}\n **** Band Gap in lines: {band_gap:.6f}")
+    print(f"[INFO] Fermi: {fermi_energy} \n[INFO] VBM: {vbm:.6f} \n[INFO] CBM: {cbm:.6f}\n[INFO] Band Gap in lines: {band_gap:.6f}")
     return vbm,cbm
 
 def shift_bands(dic, val):
@@ -158,7 +216,7 @@ def plot(dic,custom_ticks):
     for pos in tick_positions:
         plt.axvline(x=pos, color='gray', linestyle='--', linewidth=1)
     # plot limits
-    plt.ylim(-2, 2)
+    plt.ylim(-20, 20)
     plt.ylabel("Energy")
     plt.grid(True)
     plt.show()
@@ -166,14 +224,14 @@ def plot(dic,custom_ticks):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run stb-bands.x to process band structure data.",
+        description="Process the band structure data.",
         epilog="Example usage:\n"
-               "  stb_bands.x --input-file siesta.bands --shift fermi\n"
-               "  stb_bands.x --input-file siesta.bands --shift manual --manual-value 0.5",
+               "  stb_bands --file siesta.bands --shift fermi\n"
+               "  stb_bands --file siesta.bands --shift manual --manual-value 0.5",
         formatter_class=argparse.RawTextHelpFormatter
     )
 
-    parser.add_argument("--input-file", type=str, required=True,
+    parser.add_argument("--file",  dest="input_file", type=str, required=True,
                         help="Path to the input file containing band structure data (e.g., siesta.bands).")
 
     parser.add_argument("--shift", type=str, choices=["vbm", "cbm", "fermi", "manual"], required=True,
@@ -186,7 +244,9 @@ def main():
     parser.add_argument("--manual-value", type=float,
                         help="Custom energy shift value (required if --shift manual is used).")
 
-    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {VERSION}")
+    
+    parser.add_argument("--no-intro", dest="intro", action="store_false", help="Do not show the introduction")
 
     args = parser.parse_args()
 
@@ -194,12 +254,17 @@ def main():
     # verify the manual value
     if args.shift == "manual" and args.manual_value is None:
         parser.error("--manual-value is required when --shift is set to 'manual'.")
+    
+    if args.intro == True:
+        show_intro()
 
-    print("\n==================== Running stb_bands.x ====================")
+    print("\n" + color_text("BANDS:", 'bold'))
+    print("-"*60)
+
     # Condition to shift the band structure
-    print("- Read file ...")
+    print("\n[INFO] Read file ...")
     fermi_energy,high_sym,dic_bands=read_data(args.input_file)
-    print("- Calculate VBM and CBM ...")
+    print("[INFO] Calculate VBM and CBM ...")
     vbm,cbm=cbm_vbm(fermi_energy,high_sym,dic_bands)
 
     if args.shift == "vbm":
@@ -210,11 +275,16 @@ def main():
         rshift = fermi_energy
     elif args.shift == "manual":
         rshift = args.manual_value
-    print("- Write files...")
+    print("[INFO] Write files...")
+    print("[WARNING] \n")
+    
     write_gnuplot_bands(shift_bands(dic_bands,rshift))
     plot(shift_bands(dic_bands,rshift),high_sym)
     plot_gnuplot(high_sym)
-    print("====== Bands found! But still no sign of Metallica. ======\n")
+    
+    print("\n[INFO] Complete job!") 
+    print("\n"+"-"*60)
+    print(color_text("Bands found! But still no sign of Metallica.\n\n", 'bold'))
 
 if __name__ == "__main__":
     main()

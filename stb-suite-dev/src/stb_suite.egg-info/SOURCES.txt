@@ -1,0 +1,12 @@
+pyproject.toml
+src/stb/__init__.py
+src/stb/bands.py
+src/stb/convdos.py
+src/stb/structural.py
+src/stb/translate.py
+src/stb_suite.egg-info/PKG-INFO
+src/stb_suite.egg-info/SOURCES.txt
+src/stb_suite.egg-info/dependency_links.txt
+src/stb_suite.egg-info/entry_points.txt
+src/stb_suite.egg-info/requires.txt
+src/stb_suite.egg-info/top_level.txt

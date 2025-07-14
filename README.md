@@ -1,9 +1,9 @@
 
 # 📦 STB-SUITE – Siesta Toolbox Suite
 
-**Version:** 1.5.10  
-**Author:** Dr. Carlos M. O. Bastos – University of Brasília (UnB) – 2025  
-**License:** MIT   
+**Version:** 1.5.10
+**Author:** Dr. Carlos M. O. Bastos – University of Brasília (UnB) – 2025
+**License:** MIT
 **Compatible with:** Python ≥3.9, Linux/macOS/Windows
 
 ---
@@ -18,39 +18,39 @@ It provides an intuitive and unified interface that streamlines the workflow of 
 
 ## 🚀 Features
 
-- ✅ **Band Structure Analysis**  
+- ✅ **Band Structure Analysis**
   Process and visualize SIESTA band structures with customizable energy references.
 
-- ✅ **Density of States Convolution**  
+- ✅ **Density of States Convolution**
   Apply Gaussian smoothing to DOS data to improve visualization.
 
-- ✅ **Strain Generator**  
+- ✅ **Strain Generator**
   Automatically generate supercells under uniaxial or biaxial strain in Cartesian coordinates.
 
-- ✅ **Structural Analysis**  
+- ✅ **Structural Analysis**
   Compute lattice parameters, nearest neighbor analysis (ECN), and coordination numbers using multiple algorithms.
 
-- ✅ **Symmetry Analysis**  
+- ✅ **Symmetry Analysis**
   Extract space group, crystal system, point group, Wyckoff positions, and symmetry operations.
 
-- ✅ **File Format Conversion**  
+- ✅ **File Format Conversion**
   Seamlessly convert between CIF, POSCAR, XYZ, FDF (Siesta), DFTB, FHI-aims, and XSF formats.
 
-- ✅ **Interface to Wantibexos**  
+- ✅ **Interface to Wantibexos**
   Convert SIESTA Hamiltonians to tight-binding format compatible with **Wantibexos**.
 
-- ✅ **Clean Workspace Utility**  
+- ✅ **Clean Workspace Utility**
   Automatically clean directories by removing temporary and unnecessary files.
 
-- ✅ **Unified GUI-like Terminal Interface**  
+- ✅ **Unified GUI-like Terminal Interface**
   A user-friendly terminal interface for selecting tools and parameters interactively.
 
 ---
 
 ## 🧠 Requirements
 
-- Python ≥3.9  
-- Conda (recommended)  
+- Python ≥3.9
+- Conda (recommended)
 
 ### Python Dependencies (installed automatically via Conda or `pip`):
 - `numpy`
@@ -72,8 +72,8 @@ conda install bastoscmo::stb_suite
 
 ### 🔸 Manual Installation (from GitHub)
 ```bash
-git clone https://github.com/username/stb-suite.git
-cd stb-suite
+git clone https://github.com/bastoscmo/stb-suite.git
+cd stb-suite-dev
 pip install .
 ```
 
@@ -151,7 +151,7 @@ stb-clean --keep .fdf .psml .sh
 
 ## 📚 Documentation
 
-- Full documentation: **(Coming Soon)**  
+- Full documentation: **(Coming Soon)**
 - Each tool provides help via:
 ```bash
 stb-toolname --help
@@ -183,6 +183,5 @@ This project is licensed under the MIT License – see the [LICENSE](LICENSE) fi
 
 ## ❤️ Acknowledgments
 
-- Developed at the **LCCMat - Institute of Physics - University of Brasília (UnB)**.  
+- Developed at the **LCCMat - Institute of Physics - University of Brasília (UnB)**.
 - Thanks to the SIESTA development team and the open-source community.
-

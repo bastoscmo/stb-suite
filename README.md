@@ -1,7 +1,6 @@
-
 # 📦 STB-SUITE – Siesta Toolbox Suite
 
-**Version:** 1.5.10
+**Version:** 1.8.0
 **Author:** Dr. Carlos M. O. Bastos – University of Brasília (UnB) – 2025
 **License:** MIT
 **Compatible with:** Python ≥3.9, Linux/macOS/Windows
@@ -10,38 +9,45 @@
 
 ## 🔍 Description
 
-**STB-SUITE** (Siesta Toolbox Suite) is a comprehensive collection of command-line tools developed to assist users of the **SIESTA** DFT code with common tasks such as structural manipulation, symmetry analysis, electronic structure post-processing (bands and DOS), strain generation, and file format conversion.
+**STB-SUITE** (Siesta Toolbox Suite) is a comprehensive collection of command-line tools developed to assist users of the **SIESTA** DFT code with common tasks in computational materials physics. The suite now includes robust tools for **calculation preparation** (input file generation, k-grids, and k-paths), **results analysis** (bands, DOS, structure, and symmetry), and **utilities** (format conversion and workspace cleanup).
 
-It provides an intuitive and unified interface that streamlines the workflow of computational materials science researchers.
+It provides a unified and intuitive interface that streamlines the workflow of researchers in materials science.
 
 ---
 
 ## 🚀 Features
 
-- ✅ **Band Structure Analysis**
-  Process and visualize SIESTA band structures with customizable energy references.
+Version 1.8.0 significantly expands the suite's capabilities, organizing the functionalities into three main categories:
 
-- ✅ **Density of States Convolution**
-  Apply Gaussian smoothing to DOS data to improve visualization.
-
-- ✅ **Strain Generator**
+### 🔸 Calculation (Preparation)
+- ✅ **Input File Generator (`stb-inputfile`)**
+  Automatically generate FDF input files (`calc.fdf`) from structure files, including suggestions for calculation type (total energy, relaxation, AIMD, bands) and pseudopotential paths.
+- ✅ **K-Grid Generator (`stb-kgrid`)**
+  Suggest and automatically generate Monkhorst-Pack K-point grids based on the desired K-point density to optimize convergence.
+- ✅ **K-Path Generator (`stb-kpath`)**
+  Generate high-symmetry paths for band structure calculations (bands) from structure files.
+- ✅ **Strain Generator (`stb-strain`)**
   Automatically generate supercells under uniaxial or biaxial strain in Cartesian coordinates.
 
-- ✅ **Structural Analysis**
-  Compute lattice parameters, nearest neighbor analysis (ECN), and coordination numbers using multiple algorithms.
+### 🔸 Analysis (Post-processing)
+- ✅ **Bands Analyzer (`stb-bands`)**
+  Process and visualize SIESTA band structures, calculate band gaps, and customize the energy reference (VBM, CBM, Fermi, or manual value).
+- ✅ **PDOS XML Parser (`stb-dos`)**
+  Extract and analyze Projected Density of States (PDOS) data from the `PDOS.xml` file, with options for total DOS, by atom, and by species.
+- ✅ **DOS Processor (Convolution) (`stb-convdos`)**
+  Apply Gaussian smoothing (convolution) to DOS data to improve visualization.
+- ✅ **Structural Analyzer (`stb-structural`)**
+  Calculate lattice parameters, nearest neighbor analysis (ECN), and coordination numbers using multiple algorithms.
+- ✅ **Symmetry Analyzer (`stb-symmetry`)**
+  Extract space group, crystal system, point group, Wyckoff positions, and symmetry operations from structures.
 
-- ✅ **Symmetry Analysis**
-  Extract space group, crystal system, point group, Wyckoff positions, and symmetry operations.
-
-- ✅ **File Format Conversion**
-  Seamlessly convert between CIF, POSCAR, XYZ, FDF (Siesta), DFTB, FHI-aims, and XSF formats.
-
-- ✅ **Interface to Wantibexos**
-  Convert SIESTA Hamiltonians to tight-binding format compatible with **Wantibexos**.
-
-- ✅ **Clean Workspace Utility**
-  Automatically clean directories by removing temporary and unnecessary files.
-
+### 🔸 Utilities & Interfaces
+- ✅ **File Translator (`stb-translate`)**
+  Seamlessly convert between structure file formats: CIF, POSCAR, XYZ, FDF (Siesta), DFTB, FHI-aims, and XSF.
+- ✅ **Wantibexos Interface (`stb-siesta2wtb`)**
+  Convert SIESTA Hamiltonians to the tight-binding format compatible with **Wantibexos**.
+- ✅ **Clean File Tools (`stb-clean`)**
+  Utility to automatically clean directories by removing temporary and unnecessary calculation files.
 - ✅ **Unified GUI-like Terminal Interface**
   A user-friendly terminal interface for selecting tools and parameters interactively.
 
@@ -52,7 +58,7 @@ It provides an intuitive and unified interface that streamlines the workflow of 
 - Python ≥3.9
 - Conda (recommended)
 
-### Python Dependencies (installed automatically via Conda or `pip`):
+### Python Dependencies (automatically installed via Conda or `pip`):
 - `numpy`
 - `matplotlib`
 - `ase`
@@ -73,7 +79,7 @@ conda install bastoscmo::stb_suite
 ### 🔸 Manual Installation (from GitHub)
 ```bash
 git clone https://github.com/bastoscmo/stb-suite.git
-cd stb-suite-dev
+cd stb-suite
 pip install .
 ```
 
@@ -85,74 +91,71 @@ pip install .
 ```bash
 stb-suite
 ```
-
 An interactive terminal menu will guide you through the available tools.
 
 ---
 
 ## 🛠️ Individual Commands
 
-| Command                  | Description                          |
-|--------------------------|--------------------------------------|
-| `stb-bands`              | Band structure analysis             |
-| `stb-convdos`            | DOS convolution (Gaussian)          |
-| `stb-strain`             | Strain generator                    |
-| `stb-structural`         | Structural analysis                 |
-| `stb-symmetry`           | Symmetry analysis                   |
-| `stb-translate`          | File format converter               |
-| `stb-wantibexos`         | SIESTA → Wantibexos converter       |
-| `stb-clean`              | Clean files in directories          |
+| Command                  | Category                    | Description                                                              |
+|--------------------------|-----------------------------|------------------------------------------------------------------------|
+| `stb-inputfile`          | Preparation                 | Generates the `calc.fdf` input file from a structure.                  |
+| `stb-kgrid`              | Preparation                 | Generates the K-point grid (Monkhorst-Pack).                           |
+| `stb-kpath`              | Preparation                 | Generates the high-symmetry path for band structure calculation.         |
+| `stb-strain`             | Preparation                 | Generates structures under strain.                                     |
+| `stb-bands`              | Analysis                    | Analyzes `.bands` files and calculates band gaps.                      |
+| `stb-dos`                | Analysis                    | Analyzes the `PDOS.xml` file (DOS and PDOS).                           |
+| `stb-convdos`            | Analysis                    | Applies Gaussian convolution to DOS data.                              |
+| `stb-structural`         | Analysis                    | Analyzes structural properties (ECN, coordination).                    |
+| `stb-symmetry`           | Analysis                    | Analyzes the symmetry of crystal structures.                           |
+| `stb-translate`          | Utility                     | Structure file format converter.                                       |
+| `stb-siesta2wtb`         | Utility                     | Converts SIESTA Hamiltonian to Wantibexos.                             |
+| `stb-clean`              | Utility                     | Cleans temporary and calculation files in a directory.                 |
 
 ---
 
 ## 📑 Examples
 
-### ▶️ Band structure processing
+### ▶️ Input File Generation
 ```bash
-stb-bands --file siesta.bands --shift fermi
+stb-inputfile structure.fdf --type relax+d3 --pp-path /path/to/pseudopotentials
 ```
 
-### ▶️ Apply Gaussian convolution to DOS
+### ▶️ K-Grid Generation
 ```bash
-stb-convdos --file siesta.DOS --size 11 --sigma 0.2 --out dos_filtered.dat
+stb-kgrid --file structure.cif --type cif --density 0.15
 ```
 
-### ▶️ Generate strained structures
+### ▶️ K-Path Generation
 ```bash
-stb-strain --file structure.fdf --stdir xy --stmin -5 --stmax 5 --step 1
+stb-kpath --file structure.poscar --type poscar --prec 0.001
 ```
 
-### ▶️ Structural analysis
+### ▶️ Bands Analysis
 ```bash
-stb-structural --file structure.cif --format cif --mode mean
+stb-bands --file siesta.bands --shift vbm --plot
 ```
 
-### ▶️ Symmetry analysis
+### ▶️ PDOS Analysis
 ```bash
-stb-symmetry --file structure.cif --format cif
+stb-dos PDOS.xml --shift fermi --type total atom
 ```
 
-### ▶️ File conversion
+### ▶️ File Conversion
 ```bash
-stb-translate --file structure.cif --in cif --out poscar
+stb-translate --in-format cif --in-file structure.cif --out-format poscar --out-file POSCAR
 ```
 
-### ▶️ Convert to Wantibexos
+### ▶️ Directory Cleanup
 ```bash
-stb-wantibexos --input siesta.fdf --output siesta.out
-```
-
-### ▶️ Clean directory
-```bash
-stb-clean --keep .fdf .psml .sh
+stb-clean --path . --keep .fdf .psml .sh --dry-run
 ```
 
 ---
 
 ## 📚 Documentation
 
-- Full documentation: **(Coming Soon)**
-- Each tool provides help via:
+- The complete documentation for each tool is available through the `--help` argument:
 ```bash
 stb-toolname --help
 ```

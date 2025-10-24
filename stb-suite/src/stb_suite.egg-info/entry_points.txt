@@ -1,0 +1,10 @@
+[console_scripts]
+stb-bands = stb.bands:main
+stb-clean = stb.clean:main
+stb-convdos = stb.convdos:main
+stb-siesta2wtb = stb.wantibexos_interface:main
+stb-strain = stb.strain:main
+stb-structural = stb.structural:main
+stb-suite = stb.stb_suite:main
+stb-symmetry = stb.symmetry_analysis:main
+stb-translate = stb.translate:main

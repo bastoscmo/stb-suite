@@ -1,0 +1,85 @@
+
+#SYSTEM_DESCRIPTORS#
+SystemName Sn3O4
+SystemLabel  Sn3O4
+
+#BASIS_SET_DEFINITION#
+
+PAO.BasisSize DZP
+PAO.EnergyShift      0.02 Ry
+
+#LATTICE_INFORMATION_AND_KGRID#
+
+%include structure.fdf
+
+kgrid_Monkhorst_Pack [ 7 6 4 ]
+
+
+#FUNCTIONAL_AND_CONVERGENCE#
+
+MeshCutOff             320 Ry
+FilterCutoff           150 Ry
+MaxSCFIterations       300
+XC.Functional          GGA
+XC.Authors             PBE
+Spin                   non-polarized
+SCF.Mixer.Weight       1.0d-1
+SCF.DM.Tolerance       1.0d-6 eV
+ElectronicTemperature  25.0 meV
+Diag.ParallelOverK     .true.
+DFTD3                  .true.
+
+### BANDS
+ BandLinesScale  ReciprocalLatticeVectors
+ None
+%block BandLines
+1    0.0000000000     0.0000000000     0.0000000000     GAMMA
+50   0.5000000000     0.0000000000     0.0000000000     X 
+50   0.0000000000     0.5000000000     0.0000000000     Y 
+50   0.0000000000     0.0000000000     0.0000000000     GAMMA
+50   0.0000000000     0.0000000000     0.5000000000     Z
+50  -0.5000000000    -0.5000000000     0.5000000000     R
+50   0.0000000000     0.0000000000     0.0000000000     GAMMA
+50   0.0000000000    -0.5000000000     0.5000000000     T
+50  -0.5000000000     0.0000000000     0.5000000000     U
+50   0.0000000000     0.0000000000     0.0000000000     GAMMA
+50   0.5000000000    -0.5000000000     0.0000000000     V
+%endblock BandLines
+
+### DOS
+%PDOS.kgrid_Monkhorst_Pack
+  26     0    0  0.0
+    0   22    0  0.0
+    0     0   16  0.0
+%end PDOS.kgrid_Monkhorst_Pack
+ 
+%block  ProjectedDensityOfStates
+ -20.0  40.0  0.01  6000  eV
+%endblock  ProjectedDensityOfStates
+
+
+
+#READ
+DM.UseSaveDM     .true.
+MD.UseSaveZM     .false.
+MD.UseSaveCG     .false.
+ON.UseSaveLWF    .false.
+
+
+#STRUCTURAL_RELAXATION#
+MD.VariableCell  .true.
+MD.MaxDispl      1.0d-2 Ang
+MD.MaxForceTol   1.0d-2 eV/Ang
+MD.Steps         0
+
+#OUTPUT_OPTIONS#
+WriteCoorInitial  .true.
+WriteMDHistory    .true.
+WriteCoorStep     .true.
+WriteForces       .true.
+WriteCoorXmol     .true.
+WriteMDXmol       .true.
+SaveHS            .true.
+SaveRho           .true.
+#CDF.Save          .true.
+#CDF.Compress        9

@@ -1,0 +1,35 @@
+package:
+  name: stb_suite
+  version: "1.8.0"
+
+source:
+  path: .
+
+build:
+  noarch: python
+  script:
+    - python -m pip install .   # Instala o pacote
+
+channels:
+  - conda-forge
+
+requirements:
+  host:
+    - python>=3.9,<3.11
+    - pip
+    - build
+  run:
+    - python>=3.9,<3.11
+    - numpy
+    - matplotlib
+    - pip
+  pip:
+    - ase
+    - pymatgen
+    - spglib
+    - sisl
+
+about:
+  home: "https://github.com/bastoscmo"
+  license: MIT
+  summary: "Siesta ToolBox suite with softwares to pre and pos-processing data for Siesta code."

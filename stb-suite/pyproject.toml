@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stb_suite"
+version = "1.8.0"
+description = "Siesta ToolBox (STB) suite with softwares pre and pos processing for Siesta code."
+readme = "README.md"
+license = {file = "LICENSE"}
+dependencies = [
+    "numpy",
+    "ase",
+    "matplotlib",
+    "pymatgen",
+    "spglib",
+    "sisl"
+]
+
+[project.scripts]
+stb-bands = "stb.bands:main"
+stb-convdos = "stb.convdos:main"
+stb-structural = "stb.structural:main"
+stb-translate = "stb.translate:main"
+stb-strain = "stb.strain:main"
+stb-suite = "stb.stb_suite:main"
+stb-clean = "stb.clean:main"
+stb-symmetry = "stb.symmetry:main"
+stb-siesta2wtb = "stb.wantibexos:main"
+stb-dos = "stb.dos:main"
+stb-inputfile = "stb.inputfile:main"
+stb-kgrid = "stb.kgrid:main"
+stb-kpath = "stb.kpath:main"

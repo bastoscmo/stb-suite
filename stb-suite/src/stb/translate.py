@@ -17,8 +17,7 @@ import argparse
 import textwrap
 from typing import List, Dict
 import argparse
-from pymatgen.core.periodic_table import Element
-from pymatgen.core import SiteCollection, Structure
+from ase.io import read as ase_read
 import numpy as np
 
 
@@ -276,37 +275,6 @@ def getatomsandvectors_vasp(poscar):
 
 
 # This Function define the data for cif file
-def getatomsandvectors_cif(input_cif):
-    element, atomicnumber = periodic_table()
-    structure = Structure.from_file(input_cif)
-    atom_data = [(i+1, site.species_string, site.coords)
-                 for i, site in enumerate(structure.sites)]
-    getatoms = []
-    dicatoms = {}
-    icont = 1
-    for atom in atom_data:
-        if atom[1] not in dicatoms:
-            dicatoms[atom[1]] = []
-        dicatoms[atom[1]].append([f"{atom[2][0]:.8f}",
-                                  f"{atom[2][1]:.8f}",
-                                  f"{atom[2][2]:.8f}"
-                                  ])
-    for line in dicatoms:
-        getatoms.append([f"{icont}",
-                         f"{element[line]}",
-                         f"{line}",
-                         f"{len(dicatoms[line])}"])
-    atomic_position = dicatoms
-    typevectors = 'Cartesian'
-    latticeparameter = '1.00'
-    vectors = []
-    for line in structure.lattice.matrix:
-        vectors.append([f"{line[0]:.8f}", f"{line[1]:.8f}", f"{line[2]:.8f}"])
-    coord = structure.cart_coords
-    return typevectors, latticeparameter, vectors, getatoms, atomic_position
-
-
-# This Function define the data for cif file
 def getatomsandvectors_fhi(input_fhi):
     element, atomicnumber = periodic_table()
     datafhi = readfile(input_fhi)
@@ -340,6 +308,84 @@ def getatomsandvectors_fhi(input_fhi):
 
     return typevectors, latticeparameter, vectors, getatoms, atomic_position
 
+
+# This Function define the data for cif file
+# This Function define the data for cif file
+def getatomsandvectors_cif(input_cif):
+    """
+    Extrai dados de estrutura de um arquivo .cif usando a biblioteca ASE.
+    Retorna os dados no formato padrão esperado pelo script.
+    """
+    
+    # 1. Obter o dicionário de elementos definido localmente no script
+    element, atomicnumber = periodic_table()
+    
+    # 2. Ler o arquivo CIF usando a função 'ase_read'
+    # Esta função foi importada no topo do script como 'ase_read'
+    # Adicionamos um try...except para o caso da ASE não estar instalada.
+    try:
+        structure = ase_read(input_cif)
+    except NameError:
+        # Este erro acontece se a importação no Passo 1 falhar
+        print(color_text("[ERRO] A função 'ase_read' não foi encontrada.", 'red'))
+        print(color_text("       Verifique se adicionou 'from ase.io import read as ase_read' no topo do script.", 'yellow'))
+        sys.exit(1)
+    except Exception as e:
+        # Captura outros erros de leitura da ASE
+        print(color_text(f"[ERRO] Falha ao ler o arquivo CIF com ASE: {e}", 'red'))
+        print(color_text("       Verifique se a biblioteca 'ase' está instalada (pip install ase)", 'yellow'))
+        sys.exit(1)
+
+
+    # 3. Extrair vetores de rede (vectors)
+    # O método .get_cell() da ASE retorna os vetores de rede completos,
+    # não escalonados (em Angstroms).
+    # O formato de retorno deve ser: [['v1x', 'v1y', 'v1z'], [...], [...]]
+    vectors = []
+    for vec in structure.get_cell():
+        vectors.append([f"{vec[0]:.8f}", f"{vec[1]:.8f}", f"{vec[2]:.8f}"])
+
+    # 4. Extrair posições atômicas (atomic_position)
+    # .get_positions() retorna coordenadas Cartesianas em Angstroms.
+    # O formato de retorno deve ser: {'Simbolo': [['x1', 'y1', 'z1'], ['x2', 'y2', 'z2'], ...]}
+    
+    symbols = structure.get_chemical_symbols() # Lista de símbolos, ex: ['C', 'C', 'H']
+    positions = structure.get_positions()      # Array numpy de posições
+    
+    # Usamos 'dicatoms' como na função original para construir o dicionário
+    dicatoms = {} 
+    for sym, pos in zip(symbols, positions):
+        if sym not in dicatoms:
+            dicatoms[sym] = []
+        # Adiciona a posição formatada como strings
+        dicatoms[sym].append([f"{pos[0]:.8f}", f"{pos[1]:.8f}", f"{pos[2]:.8f}"])
+    
+    atomic_position = dicatoms
+
+    # 5. Extrair informações das espécies (getatoms)
+    # O formato de retorno deve ser: [['indice', 'num_atomico', 'simbolo', 'contagem'], ...]
+    
+    getatoms = []
+    icont = 1 # O índice da espécie deve começar em 1
+    
+    # Iteramos sobre o dicionário de átomos que acabámos de criar
+    for sym in dicatoms: 
+        getatoms.append([
+            f"{icont}",            # Indice (ex: '1')
+            f"{element[sym]}",     # Num. Atômico (usando a função local)
+            f"{sym}",              # Símbolo (ex: 'C')
+            f"{len(dicatoms[sym])}" # Contagem (ex: '12')
+        ])
+        icont += 1 # Incrementa o índice para a próxima espécie
+
+    # 6. Definir tipo de vetores e parâmetro de rede
+    # Como a ASE retorna coordenadas Cartesianas e vetores de rede completos,
+    # definimos o formato como Cartesiano e o parâmetro de rede como 1.0.
+    typevectors = 'Cartesian'
+    latticeparameter = '1.00'
+
+    # 7. Retornar os dados no formato padrão esperado
+    return typevectors, latticeparameter, vectors, getatoms, atomic_position
 
 def getatomsandvectors_siesta(input_siesta):
     element, atomicnumber = periodic_table()
@@ -516,7 +562,7 @@ def getatomsandvectors_fdf(input_fdf):
     # Se o formato não foi especificado, assume 'Direct' (Fracionário)
     # como padrão, que é comum em muitos arquivos FDF.
     if typevectors is None:
-        print("[WARNING] AtomicCoordinatesFormat não encontrado. Assumindo 'Direct' (Fractional).")
+        print("[WARNING] AtomicCoordinatesFormat not found. Assuming 'Direct' (Fractional).")
         typevectors = 'Direct'
 
     # --- Pós-processamento ---
@@ -556,13 +602,20 @@ def getatomsandvectors_fdf(input_fdf):
 ###################### Write functions ################
 
 
-def writefilefdf(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename):
+def writefilefdf(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename, coord_format=None):
+    
+    # --- NEW: Convert coordinates ---
+    final_type, final_positions = convert_coordinates(
+        typevectors, latticeparameter, vectors, atomsposition, coord_format
+    )
+    # --- END NEW ---
+
     numberofatoms = 0
     for lin in getatoms:
         numberofatoms = numberofatoms+int(lin[3])
     outfile = []
     outfile.append(
-        '# automatic create translation file using sstranslate\n\n')
+        '# automatic create  using stb-translate (https://github.com/bastoscmo/stb-suite)\n\n')
     outfile.append(f"NumberOfSpecies    {len(getatoms)}")
     outfile.append(f"NumberofAtoms      {numberofatoms}\n\n")
     outfile.append("%block ChemicalSpeciesLabel")
@@ -570,28 +623,42 @@ def writefilefdf(typevectors, latticeparameter, vectors, getatoms, atomsposition
         outfile.append(f" {atoms[0]}   {atoms[1]}   {atoms[2]}")
     outfile.append("%endblock ChemicalSpeciesLabel \n")
     outfile.append(f"LatticeConstant {latticeparameter} Ang \n")
-    if typevectors == 'Direct':
+    
+    # --- MODIFIED: Use final_type ---
+    if final_type == 'Direct':
         outfile.append("AtomicCoordinatesFormat  Fractional \n\n")
-    if typevectors == 'Cartesian':
+    if final_type == 'Cartesian':
         outfile.append("AtomicCoordinatesFormat  Ang\n\n")
+    # --- END MODIFIED ---
+
     outfile.append("%block LatticeVectors")
     for lin in vectors:
         outfile.append(f" {lin[0]}   {lin[1]}   {lin[2]} ")
     outfile.append("%endblock LatticeVectors\n\n")
     outfile.append("%block AtomicCoordinatesAndAtomicSpecies")
+    
+    # --- MODIFIED: Use final_positions ---
     for elem in getatoms:
-        for position in atomsposition[elem[2]]:
+        for position in final_positions[elem[2]]:
             outfile.append(
                 f"  {position[0]}   {position[1]}   {position[2]}   {elem[0]}  ")
+    # --- END MODIFIED ---
+
     outfile.append("%endblock AtomicCoordinatesAndAtomicSpecies")
     np.savetxt(outfilename, outfile, fmt='%s')
     return
 
 
-def writefileposcar(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename):
+def writefileposcar(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename, coord_format=None):
+    
+    # --- NEW: Convert coordinates ---
+    final_type, final_positions = convert_coordinates(
+        typevectors, latticeparameter, vectors, atomsposition, coord_format
+    )
+    # --- END NEW ---
+
     outfile = []
-    outfile.append(
-        '# automatic create using sstranslate')
+    outfile.append('# automatic create using stb-translate (https://github.com/bastoscmo/stb-suite)')
     outfile.append(f"{latticeparameter}")
     for lin in vectors:
         outfile.append(f"{lin[0]}   {lin[1]}   {lin[2]} ")
@@ -602,14 +669,21 @@ def writefileposcar(typevectors, latticeparameter, vectors, getatoms, atomsposit
         linenatoms = linenatoms+f"{atoms[3]}   "
     outfile.append(f"{lineatoms}")
     outfile.append(f"{linenatoms}")
-    if typevectors == 'Direct':
+    
+    # --- MODIFIED: Use final_type ---
+    if final_type == 'Direct':
         outfile.append("Direct")
-    if typevectors == 'Cartesian':
+    if final_type == 'Cartesian':
         outfile.append("Cartesian")
+    # --- END MODIFIED ---
+
+    # --- MODIFIED: Use final_positions ---
     for elem in getatoms:
-        for position in atomsposition[elem[2]]:
+        for position in final_positions[elem[2]]:
             outfile.append(
                 f"{position[0]}   {position[1]}   {position[2]}")
+    # --- END MODIFIED ---
+
     np.savetxt(outfilename, outfile, fmt='%s')
     return
 
@@ -619,24 +693,37 @@ def angle(u, v):
         return np.degrees(np.arccos(np.clip(cos_theta, -1.0, 1.0)))
         
 
-def writefilecif(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename):
+def writefilecif(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename, coord_format=None):
     """
-    Escreve um arquivo CIF no formato padrão.
+    Writes a CIF file in the standard format.
+    Note: CIF *always* uses fractional (Direct) coordinates.
     """
-    vectors = np.array(vectors, dtype=float) * float(latticeparameter)
+    
+    # --- NEW: Conversion logic for CIF ---
+    if coord_format and coord_format.lower() == 'cartesian':
+        print("[WARNING] CIF format requires fractional (Direct) coordinates.")
+        print("[INFO]    Ignoring '--coord-format cartesian' and converting to Direct.")
+    
+    # Force conversion to Direct, regardless of user input
+    final_type, final_positions = convert_coordinates(
+        typevectors, latticeparameter, vectors, atomsposition, 'direct' # Force 'direct'
+    )
+    # --- END NEW ---
+
+    vectors_np = np.array(vectors, dtype=float) * float(latticeparameter)
 
     outfile = []
-
+    outfile.append('# automatic create using stb-translate (https://github.com/bastoscmo/stb-suite)')
     outfile.append("data_generated")
     outfile.append("_symmetry_space_group_name_H-M   'P 1'")
     outfile.append("_symmetry_Int_Tables_number      1")
-    outfile.append("_cell_length_a    {:.8f}".format(np.linalg.norm(vectors[0])))
-    outfile.append("_cell_length_b    {:.8f}".format(np.linalg.norm(vectors[1])))
-    outfile.append("_cell_length_c    {:.8f}".format(np.linalg.norm(vectors[2])))
+    outfile.append("_cell_length_a    {:.8f}".format(np.linalg.norm(vectors_np[0])))
+    outfile.append("_cell_length_b    {:.8f}".format(np.linalg.norm(vectors_np[1])))
+    outfile.append("_cell_length_c    {:.8f}".format(np.linalg.norm(vectors_np[2])))
 
-    alpha = angle(vectors[1], vectors[2])
-    beta = angle(vectors[0], vectors[2])
-    gamma = angle(vectors[0], vectors[1])
+    alpha = angle(vectors_np[1], vectors_np[2])
+    beta = angle(vectors_np[0], vectors_np[2])
+    gamma = angle(vectors_np[0], vectors_np[1])
 
     outfile.append("_cell_angle_alpha  {:.8f}".format(alpha))
     outfile.append("_cell_angle_beta   {:.8f}".format(beta))
@@ -655,20 +742,14 @@ def writefilecif(typevectors, latticeparameter, vectors, getatoms, atomsposition
     outfile.append("_atom_site_fract_y")
     outfile.append("_atom_site_fract_z")
 
-    # Conversão de coordenadas cartesianas para fracionárias, se necessário
-    inv_lattice = np.linalg.inv(vectors)
-
+    # --- MODIFIED: Simplified to use final_positions ---
+    # Since we know final_positions is 'Direct', the logic is simple
     for elem in getatoms:
-        for pos in atomsposition[elem[2]]:
-            if typevectors.lower() == 'direct':
-                xf, yf, zf = map(float, pos)
-            elif typevectors.lower() == 'cartesian':
-                cart = np.array([float(pos[0]), float(pos[1]), float(pos[2])])
-                fract = np.dot(inv_lattice, cart)
-                xf, yf, zf = fract
+        for pos_str_list in final_positions[elem[2]]:
             outfile.append(
-                f"{elem[2]}   {elem[2]}   {xf:.8f}   {yf:.8f}   {zf:.8f}"
+                f"{elem[2]}   {elem[2]}   {pos_str_list[0]}   {pos_str_list[1]}   {pos_str_list[2]}"
             )
+    # --- END MODIFIED ---
 
     np.savetxt(outfilename, outfile, fmt='%s')
     return
@@ -676,8 +757,20 @@ def writefilecif(typevectors, latticeparameter, vectors, getatoms, atomsposition
 
 
 
-def writefilexyz(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename):
+def writefilexyz(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename, coord_format=None):
+    
+    # --- NEW: Conversion logic for XYZ ---
+    if coord_format and coord_format.lower() == 'direct':
+        print("[WARNING] XYZ format requires Cartesian (Angstrom) coordinates.")
+        print("[INFO]    Ignoring '--coord-format direct' and converting to Cartesian.")
+
+    # Force conversion to Cartesian
+    final_type, final_positions = convert_coordinates(
+        typevectors, latticeparameter, vectors, atomsposition, 'cartesian' # Force 'cartesian'
+    )
+    # --- END NEW ---
     outfile = []
+    outfile.append('# automatic create using stb-translate (https://github.com/bastoscmo/stb-suite)')
     sum = 0
     comment = ""
     for el in getatoms:
@@ -685,108 +778,218 @@ def writefilexyz(typevectors, latticeparameter, vectors, getatoms, atomsposition
         sum = sum+int(el[3])
     outfile.append(f"{sum}")
     outfile.append(comment)
-    vectors = np.array(vectors, dtype="float")*float(latticeparameter)
-    if typevectors == 'Cartesian':
-        for elem in getatoms:
-            for position in atomsposition[elem[2]]:
-                outfile.append(
-                    f"{elem[2]}   {position[0]}   {position[1]}   {position[2]}")
-    elif typevectors == 'Direct':
-        for elem in getatoms:
-            for position in atomsposition[elem[2]]:
-                vcart = np.dot(np.array(vectors, dtype="float"),
-                               np.array(position, dtype='float'))
-                outfile.append(
-                    f"{elem[2]}   {float(vcart[0]):.8f}   {float(vcart[1]):.8f}   {float(vcart[2]):.8f}")
+    
+    # --- MODIFIED: Simplified to use final_positions ---
+    # Since we know final_positions is 'Cartesian', the logic is simple
+    for elem in getatoms:
+        for position in final_positions[elem[2]]:
+            outfile.append(
+                f"{elem[2]}   {position[0]}   {position[1]}   {position[2]}")
+    # --- END MODIFIED ---
+
     np.savetxt(outfilename, outfile, fmt='%s')
     return
 
 
-def writefiledftb(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename):
+def writefiledftb(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename, coord_format=None):
+    
+    # --- NEW: Convert coordinates ---
+    final_type, final_positions = convert_coordinates(
+        typevectors, latticeparameter, vectors, atomsposition, coord_format
+    )
+    # --- END NEW ---
     outfile = []
+    outfile.append('# automatic create using stb-translate (https://github.com/bastoscmo/stb-suite)')
     sum = 0
     comment = ""
     for el in getatoms:
         comment = comment+f"{el[2]}{el[3]} "
         sum = sum+int(el[3])
-    if typevectors == 'Cartesian':
-        outfile.append(f"{sum}   S")
-    elif typevectors == 'Direct':
-        outfile.append(f"{sum}   F")
+    
+    # --- MODIFIED: Use final_type ---
+    if final_type == 'Cartesian':
+        outfile.append(f"{sum}   S") # S = Cartesian
+    elif final_type == 'Direct':
+        outfile.append(f"{sum}   F") # F = Fractional
+    # --- END MODIFIED ---
+
     atoms = ""
     for i in range(len(getatoms)):
         atoms = atoms + f"{getatoms[i][2]}   "
     outfile.append(atoms)
 
     icont = 1
+    # --- MODIFIED: Use final_positions ---
     for elem in getatoms:
-        for position in atomsposition[elem[2]]:
+        for position in final_positions[elem[2]]:
             outfile.append(
                 f"    {icont}  {elem[0]}  {position[0]}   {position[1]}   {position[2]}")
             icont = icont+1
+    # --- END MODIFIED ---
+
     outfile.append(f"    0.00000000  0.00000000 0.00000000")
-    vectors = np.array(vectors, dtype="float")*float(latticeparameter)
+    vectors_np = np.array(vectors, dtype="float")*float(latticeparameter)
     for i in range(3):
-        outfile.append(f"    {vectors[i][0]:.8f}   {vectors[i][1]:.8f}   {vectors[i][2]:.8f}")
+        outfile.append(f"    {vectors_np[i][0]:.8f}   {vectors_np[i][1]:.8f}   {vectors_np[i][2]:.8f}")
     np.savetxt(outfilename, outfile, fmt='%s')
     return
 
 
-def writefilexsf(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename):
+def writefilexsf(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename, coord_format=None):
+    
+    # --- NEW: Conversion logic for XSF ---
+    if coord_format and coord_format.lower() == 'direct':
+        print("[WARNING] XSF format (PRIMCOORD) requires Cartesian (Angstrom) coordinates.")
+        print("[INFO]    Ignoring '--coord-format direct' and converting to Cartesian.")
+
+    # Force conversion to Cartesian
+    final_type, final_positions = convert_coordinates(
+        typevectors, latticeparameter, vectors, atomsposition, 'cartesian' # Force 'cartesian'
+    )
+    # --- END NEW ---
+    
     outfile = []
+    outfile.append('# automatic create using stb-translate (https://github.com/bastoscmo/stb-suite)')
     sum = 0
     comment = ""
     for el in getatoms:
         comment = comment+f"{el[2]}{el[3]} "
         sum = sum+int(el[3])
-    vectors = np.array(vectors, dtype="float")*float(latticeparameter)
+    vectors_np = np.array(vectors, dtype="float")*float(latticeparameter)
     outfile.append('# create by stb-translate ')
     outfile.append(f'# {comment}\n')
     outfile.append('CRYSTAL')
     outfile.append(f"PRIMVEC")
     for i in range(3):
-        outfile.append(f"    {vectors[i][0]:.8f}   {vectors[i][1]:.8f}   {vectors[i][2]:.8f}")
-    if typevectors == 'Cartesian':
-        outfile.append(f"PRIMCOORD")
-        outfile.append(f"{sum}  1")
-        for elem in getatoms:
-            for position in atomsposition[elem[2]]:
-                outfile.append(
-                    f"    {elem[1]}   {position[0]}   {position[1]}   {position[2]}")
-    elif typevectors == 'Direct':
-        outfile.append(f"PRIMCOORD")
-        outfile.append(f"{sum}  1")
-        for elem in getatoms:
-            for position in atomsposition[elem[2]]:
-                vcart = np.dot(np.array(vectors, dtype="float"),np.array(position, dtype='float'))
-                outfile.append(f"{elem[1]}   {float(vcart[0]):.8f}   {float(vcart[1]):.8f}   {float(vcart[2]):.8f}")
+        outfile.append(f"    {vectors_np[i][0]:.8f}   {vectors_np[i][1]:.8f}   {vectors_np[i][2]:.8f}")
+    
+    # --- MODIFIED: Simplified to use final_positions ---
+    # Since we know final_positions is 'Cartesian':
+    outfile.append(f"PRIMCOORD")
+    outfile.append(f"{sum}  1")
+    for elem in getatoms:
+        for position in final_positions[elem[2]]:
+            outfile.append(
+                f"    {elem[1]}   {position[0]}   {position[1]}   {position[2]}")
+    # --- END MODIFIED ---
+    
     np.savetxt(outfilename, outfile, fmt='%s')
     return
 
 
-def writefilefhi(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename):
+def writefilefhi(typevectors, latticeparameter, vectors, getatoms, atomsposition, outfilename, coord_format=None):
+    
+    # --- NEW: Convert coordinates ---
+    final_type, final_positions = convert_coordinates(
+        typevectors, latticeparameter, vectors, atomsposition, coord_format
+    )
+    # --- END NEW ---
+
     outfile = []
+    outfile.append('# automatic create using stb-translate (https://github.com/bastoscmo/stb-suite)')
     sum = 0
     comment = ""
     for el in getatoms:
         comment = comment+f"{el[2]}{el[3]} "
         sum = sum+int(el[3])
-    vectors = np.array(vectors, dtype="float")*float(latticeparameter)
-    for vector in vectors:
+    vectors_np = np.array(vectors, dtype="float")*float(latticeparameter)
+    for vector in vectors_np:
         outfile.append(f"lattice_vector   {vector[0]:.8f}   {vector[1]:.8f}   {vector[2]:.8f}")
     outfile.append(" ")
-    if typevectors == 'Cartesian':
+    
+    # --- MODIFIED: Use final_type and final_positions ---
+    if final_type == 'Cartesian':
         for elem in getatoms:
-            for position in atomsposition[elem[2]]:
+            for position in final_positions[elem[2]]:
                 outfile.append(
                     f"atom   {position[0]}   {position[1]}   {position[2]}   {elem[2]}")
-    elif typevectors == 'Direct':
+    elif final_type == 'Direct':
         for elem in getatoms:
-            for position in atomsposition[elem[2]]:
+            for position in final_positions[elem[2]]:
                 outfile.append(
                     f"atom_frac   {position[0]}   {position[1]}   {position[2]}   {elem[2]}")
+    # --- END MODIFIED ---
+
     np.savetxt(outfilename, outfile, fmt='%s')
     return
+
+
+##### NEW HELPER FUNCTION #####
+def convert_coordinates(typevectors_in: str, 
+                        latticeparameter: str, 
+                        vectors: List[List[str]], 
+                        atomsposition_in: Dict[str, List[List[str]]], 
+                        coord_format_out: str) -> (str, Dict[str, List[List[str]]]):
+    """
+    Converts coordinates between Direct (Fractional) and Cartesian (Angstrom)
+    based on the desired output format.
+
+    Args:
+        typevectors_in (str): The input format ('Direct' or 'Cartesian').
+        latticeparameter (str): The lattice parameter (scaling factor).
+        vectors (List[List[str]]): The lattice vectors.
+        atomsposition_in (Dict): The input positions dictionary.
+        coord_format_out (str): The desired output format ('direct' or 'cartesian', or None).
+
+    Returns:
+        Tuple[str, Dict]: (final_type, final_positions)
+                         The final format and the converted positions dictionary.
+    """
+    
+    # 1. Prepare the lattice matrix, scaled by the lattice parameter
+    lattice_matrix = np.array(vectors, dtype=float) * float(latticeparameter)
+    
+    # 2. Determine input and output types
+    # If the user did not specify a format, use the input format
+    if coord_format_out is None:
+        return typevectors_in, atomsposition_in
+
+    # Normalize names to 'Direct' and 'Cartesian' for comparison
+    type_in_norm = 'Direct' if typevectors_in.lower() == 'direct' else 'Cartesian'
+    type_out_norm = 'Direct' if coord_format_out.lower() == 'direct' else 'Cartesian'
+
+    # 3. Check if conversion is needed
+    if type_in_norm == type_out_norm:
+        # No conversion needed. Return original data, but with normalized type.
+        return type_out_norm, atomsposition_in
+
+    # 4. Perform conversion
+    atomsposition_out = {}
+    
+    if type_in_norm == 'Direct' and type_out_norm == 'Cartesian':
+        # --- Convert from Direct -> Cartesian ---
+        print("[INFO] Converting coordinates from Direct -> Cartesian...")
+        for symbol, positions in atomsposition_in.items():
+            atomsposition_out[symbol] = []
+            for pos in positions:
+                pos_np = np.array(pos, dtype=float)
+                # v_cart = M . v_direct
+                cart_pos = np.dot(lattice_matrix, pos_np)
+                # Format back to list of strings
+                atomsposition_out[symbol].append(
+                    [f"{cart_pos[0]:.8f}", f"{cart_pos[1]:.8f}", f"{cart_pos[2]:.8f}"]
+                )
+        return 'Cartesian', atomsposition_out
+
+    elif type_in_norm == 'Cartesian' and type_out_norm == 'Direct':
+        # --- Convert from Cartesian -> Direct ---
+        print("[INFO] Converting coordinates from Cartesian -> Direct...")
+        # v_direct = M_inv . v_cart
+        inv_lattice = np.linalg.inv(lattice_matrix)
+        for symbol, positions in atomsposition_in.items():
+            atomsposition_out[symbol] = []
+            for pos in positions:
+                pos_np = np.array(pos, dtype=float)
+                direct_pos = np.dot(inv_lattice, pos_np)
+                # Format back to list of strings
+                atomsposition_out[symbol].append(
+                    [f"{direct_pos[0]:.8f}", f"{direct_pos[1]:.8f}", f"{direct_pos[2]:.8f}"]
+                )
+        return 'Direct', atomsposition_out
+    
+    # Fallback (should not happen)
+    return typevectors_in, atomsposition_in
+##### END NEW HELPER FUNCTION #####
 
 
 def main():
@@ -805,6 +1008,17 @@ def main():
                         help="Output file format (options: cif , xyz, poscar, fdf, dftb, xsf, fhi)")
     parser.add_argument("-o", "--out-file", required=True,
                         help="Path to the output file")
+    
+    ##### NEW ARGUMENT #####
+    parser.add_argument(
+        "-cf", "--coord-format", 
+        choices=['direct', 'cartesian'], 
+        default=None,
+        help="Specify the output coordinate format (direct/fractional or cartesian). "
+             "If not specified, uses the input format or the output format's default."
+    )
+    ##### END NEW ARGUMENT #####
+
     parser.add_argument(
         "--lattice", help="Lattice vectors file, required only for XYZ output")
     parser.add_argument("-v", "--version", action="version",
@@ -829,6 +1043,11 @@ def main():
             "The --lattice argument is required when input format is XYZ.")
 
     print(f"\n[INFO] Converting {args.in_file} ({args.in_format}) to {args.out_file} ({args.out_format})...")
+
+    # Add info about coordinate format
+    if args.coord_format:
+        print(f"[INFO] Requested output coordinate format: {args.coord_format}")
+
 
     if args.out_format == "xyz":
         print(f"[INFO] Lattice vector file: {args.lattice}")
@@ -864,29 +1083,31 @@ def main():
 
     print(f"[OK] Read the file {args.in_file} ({args.in_format})")
 
+    ##### MODIFIED #####
+    # All write functions now receive 'args.coord_format'
     match (args.out_format):
         case "xyz":
             writefilexyz(typevectors, latticeparameter, vectors,
-                         getatoms, atomsposition, args.out_file)
+                         getatoms, atomsposition, args.out_file, args.coord_format)
         case "poscar":
             writefileposcar(typevectors, latticeparameter, vectors,
-                            getatoms, atomsposition, args.out_file)
+                            getatoms, atomsposition, args.out_file, args.coord_format)
         case "fdf":
             writefilefdf(typevectors, latticeparameter, vectors,
-                         getatoms, atomsposition, args.out_file)
+                         getatoms, atomsposition, args.out_file, args.coord_format)
         case "dftb":
             writefiledftb(typevectors, latticeparameter, vectors,
-                          getatoms, atomsposition, args.out_file)
+                          getatoms, atomsposition, args.out_file, args.coord_format)
         case "xsf":
             writefilexsf(typevectors, latticeparameter, vectors,
-                         getatoms, atomsposition, args.out_file)
+                         getatoms, atomsposition, args.out_file, args.coord_format)
         case "fhi":
             writefilefhi(typevectors, latticeparameter, vectors,
-                         getatoms, atomsposition, args.out_file)
+                         getatoms, atomsposition, args.out_file, args.coord_format)
 
         case "cif":
             writefilecif(typevectors, latticeparameter, vectors,
-                         getatoms, atomsposition, args.out_file)
+                         getatoms, atomsposition, args.out_file, args.coord_format)
 
     print(f"[OK] Writing the file {args.out_file} ({args.out_format})")
     

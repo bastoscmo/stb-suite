@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "stb_suite"
-version = "1.8.0"
+version = "1.8.1"
 description = "Siesta ToolBox (STB) suite with softwares pre and pos processing for Siesta code."
 readme = "README.md"
 license = {file = "LICENSE"}

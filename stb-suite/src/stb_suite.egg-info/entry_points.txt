@@ -2,9 +2,13 @@
 stb-bands = stb.bands:main
 stb-clean = stb.clean:main
 stb-convdos = stb.convdos:main
-stb-siesta2wtb = stb.wantibexos_interface:main
+stb-dos = stb.dos:main
+stb-inputfile = stb.inputfile:main
+stb-kgrid = stb.kgrid:main
+stb-kpath = stb.kpath:main
+stb-siesta2wtb = stb.wantibexos:main
 stb-strain = stb.strain:main
 stb-structural = stb.structural:main
 stb-suite = stb.stb_suite:main
-stb-symmetry = stb.symmetry_analysis:main
+stb-symmetry = stb.symmetry:main
 stb-translate = stb.translate:main

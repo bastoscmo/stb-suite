@@ -6,7 +6,7 @@
 #      bastoscmo.github.io                      #
 #################################################
     
-VERSION = "1.8.1"  
+VERSION = "1.9.0"  
 
 import os
 import sys
@@ -295,12 +295,29 @@ def run_dos_parser() -> None:
     if not shift.strip():
         shift = 'fermi'
     
+    print(f"\n{color_text('Select projection mode:', 'yellow')}")
+    print(f"  {color_text('1.', 'yellow')} l (s, p, d, f) [Default]")
+    print(f"  {color_text('2.', 'yellow')} ml (s, px, py, pz, dxy...)")
+
+    choice = 0
+    while not (1 <= choice <= 2):
+        # Usamos get_int_input com default = 1
+        choice = get_int_input(f"\nSelect mode (1-2) [default: 1]: ", 1) 
+        if not (1 <= choice <= 2):
+            print(color_text(f"Invalid choice! Please select 1 or 2.", 'red'))
+            
+    projection_mode = 'l' if choice == 1 else 'ml'
+    print(f"Selected mode: {color_text(projection_mode, 'cyan')}")
+    
+    
     args = [
         input_file, # Positional argument
         "--shift", shift,
         "--type"
     ]
+   
     args.extend(dos_types)
+    args.extend(["--projection", projection_mode])
     args.append("--no-intro")
     
     run_tool("stb-dos", args)
@@ -517,13 +534,9 @@ def run_file_translator() -> None:
         "--no-intro"
     ]
     
-    # ##### NOVO BLOCO: Adicionar o argumento de formato de coordenadas (se definido) #####
-    # Adiciona o argumento --coord-format apenas se o utilizador
-    # escolheu a opção 1 (cartesian) ou 2 (direct).
-    # Se escolheu 3 (Default), coord_format_value é None e o argumento é omitido.
     if coord_format_value:
         args.extend(["--coord-format", coord_format_value])
-    # ##### FIM DO NOVO BLOCO #####
+
 
     if in_format == "xyz":
         print(color_text("\nXYZ format requires a separate lattice file.", 'yellow'))
@@ -537,68 +550,6 @@ def run_file_translator() -> None:
     run_tool("stb-translate", args)
 
 
-#def run_file_translator() -> None:
-#    """Interface for the File Translator (stb-translate)"""
-#    print("\n" + "="*60)
-#    print(color_text("FILE TRANSLATOR (stb-translate)", 'bold').center(60))
-#    print("="*60 + "\n")
-    
-#    input_formats = ['fdf','poscar', 'cif', 'siesta', 'xyz', 'fhi', 'dftb', 'xsf']
-#    output_formats = ['xyz', 'poscar', 'fdf', 'dftb', 'xsf', 'fhi']
-    
-#    input_file = get_input("Input file path: ")
-#    while not os.path.isfile(input_file):
-#        print(color_text("File not found!", 'red'))
-#        input_file = get_input("Input file path: ")
-
- #   print(f"\n{color_text('Supported input formats:', 'yellow')}")
- #   for i, fmt in enumerate(input_formats, 1):
- #       print(f"  {color_text(str(i)+'.', 'yellow')} {fmt}")
-
- #   choice_in = 0
- #   max_in = len(input_formats)
- #   while not (1 <= choice_in <= max_in):
- #       choice_in = get_int_input(f"\nSelect input format (1-{max_in}): ")
- #       if not (1 <= choice_in <= max_in):
-  #          print(color_text(f"Invalid choice! Please select between 1 and {max_in}.", 'red'))
-    
- #   in_format = input_formats[choice_in - 1]
- #   print(f"Selected input format: {color_text(in_format, 'cyan')}")
-
- #   out_file = get_input("\nOutput file path: ")
-    
- #   print(f"\n{color_text('Supported output formats:', 'yellow')}")
- #   for i, fmt in enumerate(output_formats, 1):
- #       print(f"  {color_text(str(i)+'.', 'yellow')} {fmt}")
-
- #   choice_out = 0
-  #  max_out = len(output_formats)
- #   while not (1 <= choice_out <= max_out):
- #       choice_out = get_int_input(f"\nSelect output format (1-{max_out}): ")
- #       if not (1 <= choice_out <= max_out):
- #           print(color_text(f"Invalid choice! Please select between 1 and {max_out}.", 'red'))
-            
-  #  out_format = output_formats[choice_out - 1]
- #   print(f"Selected output format: {color_text(out_format, 'cyan')}")
-
- #   args = [
- #       "--in-format", in_format,
- #       "--in-file", input_file,
- #       "--out-format", out_format,
- #       "--out-file", out_file,
- #       "--no-intro"
- #   ]
-    
- #   if in_format == "xyz":
- #       print(color_text("\nXYZ format requires a separate lattice file.", 'yellow'))
-        # Esta linha agora terá Tab-completion!
- #       lattice_file = get_input("Lattice vectors file (required for XYZ): ")
- #       while not os.path.isfile(lattice_file):
- #           print(color_text("File not found!", 'red'))
- #           lattice_file = get_input("Lattice vectors file: ")
- #       args.extend(["--lattice", lattice_file])
-    
-#    run_tool("stb-translate", args)
 
 
 def run_clean_tool() -> None:

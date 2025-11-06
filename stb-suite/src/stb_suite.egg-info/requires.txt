@@ -1,4 +1,5 @@
 numpy
+ase
 matplotlib
 pymatgen
 spglib

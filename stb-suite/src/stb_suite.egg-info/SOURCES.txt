@@ -9,6 +9,7 @@ src/stb/kgrid.py
 src/stb/kpath.py
 src/stb/stb_suite.py
 src/stb/strain.py
+src/stb/strain_pos.py
 src/stb/structural.py
 src/stb/symmetry.py
 src/stb/translate.py

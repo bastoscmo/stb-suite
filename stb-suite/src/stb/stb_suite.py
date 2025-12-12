@@ -361,6 +361,33 @@ def run_strain_generator() -> None:
     
     run_tool("stb-strain", args)
 
+def run_strain_post_processor() -> None:
+    """Interface for the Strain Post-Processing (stb-strainpos)"""
+    print("\n" + "="*60)
+    print(color_text("STRAIN POST-PROCESSING (stb-strainpos)", 'bold').center(60))
+    print("="*60 + "\n")
+    
+    print(color_text("This tool analyzes 'strain_*' folders in the current directory.", 'yellow'))
+    
+    # Pergunta qual o nome do ficheiro de output dentro das pastas (ex: calc.out)
+    siesta_out = get_input("Siesta output filename inside folders (e.g., calc.out): ")
+    while not siesta_out.strip():
+        print(color_text("Filename is required!", 'red'))
+        siesta_out = get_input("Siesta output filename inside folders: ")
+    
+    # Pergunta o nome do ficheiro final de curva (opcional)
+    output_file = get_input("Output data file (default: stress_strain_curve.dat): ")
+    
+    args = ["--file", siesta_out]
+    
+    if output_file.strip():
+        args.extend(["--output", output_file])
+    
+    # Nota: O strain_pos.py fornecido não tem flag --no-intro, então não a passamos.
+    
+    run_tool("stb-strainpos", args)
+
+
 def run_bands_analyzer() -> None:
     """Interface for the Bands Analyzer (stb-bands)"""
     print("\n" + "="*60)
@@ -664,6 +691,7 @@ PREPARATION_TOOLS = {
         'func': run_strain_generator},
 }
 
+
 ANALYSIS_TOOLS = {
     1: {'title': "Bands Analyzer (stb-bands)",
         'description': "Analyze .bands files and calculate band gaps.",
@@ -680,6 +708,9 @@ ANALYSIS_TOOLS = {
     5: {'title': "Symmetry Analyzer (stb-symmetry)",
         'description': "Analyze the symmetry of crystal structures.",
         'func': run_symmetry_analyzer},
+    6: {'title': "Strain Post-Processing (stb-strainpos)",
+        'description': "Extract stress-strain curves from strain_* folders.",
+        'func': run_strain_post_processor},
 }
 
 UTILITY_TOOLS = {

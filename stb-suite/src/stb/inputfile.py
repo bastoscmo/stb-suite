@@ -79,6 +79,15 @@ SystemName       siesta
 ## Include the structure file generated with STB-SUITE
 %include structure.fdf
 
+#%block Geometry.Constraints
+  #stress 1  # Fixes XX 
+  #stress 2  # Fixes YY
+  #stress 3  # Fixes ZZ 
+  #stress 4  # Fixes YZ 
+  #stress 5  # Fixes XZ 
+  #stress 6  # Fixes XY 
+%endblock Geometry.Constraints
+
 ## Optional Parameters
   # %block Supercell
   # %endblock Supercell
@@ -153,6 +162,7 @@ SCF.Mixer.Weight        0.1
 SCF.DM.Tolerance        1.0d-5  eV
 SCF.Mixer.History       6
 ElectronicTemperature   300 K
+Diag.ParallelOverK      .true.
 
 ## Optional Parameters
   # SCF.MustConverge true 
@@ -356,6 +366,7 @@ SCF.Mixer.Weight        0.1
 SCF.DM.Tolerance        1.0d-5  eV
 SCF.Mixer.History       6
 ElectronicTemperature   300 K
+Diag.ParallelOverK      .true.
 
 ## Optional Parameters
   # SCF.MustConverge true
@@ -468,6 +479,16 @@ SystemName       siesta
    0   0   2
 %endblock Supercell
 
+#%block Geometry.Constraints
+  #stress 1  # Fixes XX 
+  #stress 2  # Fixes YY
+  #stress 3  # Fixes ZZ 
+  #stress 4  # Fixes YZ 
+  #stress 5  # Fixes XZ 
+  #stress 6  # Fixes XY 
+%endblock Geometry.Constraints
+
+
 ## Optional Parameters
   # %block Zmatrix
   # %endblock Zmatrix
@@ -542,6 +563,7 @@ SCF.DM.Tolerance        1.0d-4  eV
 SCF.Mixer.History       6
 ElectronicTemperature   300 K
 Diag.ParallelOverK      .true.
+
 ## Optional Parameters
   # SCF.MustConverge true
   # SCF.Mix Hamiltonian
@@ -746,6 +768,7 @@ SCF.DM.Tolerance        1.0d-5  eV
 SCF.Mixer.History       6
 ElectronicTemperature   300 K
 Diag.ParallelOverK      .true.
+
 ## Optional Parameters
   # SCF.MustConverge true
   # SCF.Mix Hamiltonian

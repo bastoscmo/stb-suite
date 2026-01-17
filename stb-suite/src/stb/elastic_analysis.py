@@ -6,7 +6,7 @@
 #     Integrated Style Refactoring              #
 #################################################
 
-VERSION = "1.9.0"
+VERSION = "1.9.1" # Atualizado versão para refletir a mudança
 
 import os
 import sys
@@ -297,6 +297,8 @@ def main():
     print_dual(f"{color_text('===== ELASTIC PROPERTIES REPORT =====', 'magenta')}", f_out)
     
     loaded_count = 0
+    print(f"\n{color_text('READING FOLDERS:', 'bold')}")
+    
     for folder in folders:
         match = regex.match(folder)
         if not match: continue
@@ -307,33 +309,68 @@ def main():
         # Read the specified file
         S, E, V = get_siesta_data(os.path.join(folder, args.file))
         
+        # --- MODIFICAÇÃO: Imprimir status da pasta ---
+        msg = f"   -> {folder:<25} : "
         if S is not None:
             if direction not in data: data[direction] = {'eps': [], 'stress': []}
             data[direction]['eps'].append(strain)
             data[direction]['stress'].append(S)
             loaded_count += 1
+            msg += color_text("OK", 'green')
+        else:
+            msg += color_text("FAIL", 'red') + " (No stress data found)"
+        
+        print(msg)
+        # ---------------------------------------------
             
-    print(f"[OK] Loaded {loaded_count} calculations from {len(folders)} folders.")
+    print(f"\n[OK] Loaded {loaded_count} calculations from {len(folders)} folders.")
 
     if not data:
         print(f"{color_text('[FAIL]', 'red')} No valid data found in strain folders.")
         print(f"       Check if '{args.file}' exists and has 'Stress tensor'.")
         sys.exit(1)
 
-    # --- C_ij Calculation ---
+
+# --- C_ij Calculation ---
     C = np.zeros((6, 6))
-    if 'x' in data:
+
+    # Eixo X (C11, C21, C31) - Tenta 'xx' ou 'x'
+    if 'xx' in data:
+        e, S = data['xx']['eps'], np.array(data['xx']['stress'])
+        for i in range(3): C[i, 0] = calculate_slope(e, S[:, i, i], CONV_FACTOR)
+    elif 'x' in data:
         e, S = data['x']['eps'], np.array(data['x']['stress'])
         for i in range(3): C[i, 0] = calculate_slope(e, S[:, i, i], CONV_FACTOR)
-    if 'y' in data:
+
+    # Eixo Y (C12, C22, C32) - Tenta 'yy' ou 'y'
+    if 'yy' in data:
+        e, S = data['yy']['eps'], np.array(data['yy']['stress'])
+        for i in range(3): C[i, 1] = calculate_slope(e, S[:, i, i], CONV_FACTOR)
+    elif 'y' in data:
         e, S = data['y']['eps'], np.array(data['y']['stress'])
         for i in range(3): C[i, 1] = calculate_slope(e, S[:, i, i], CONV_FACTOR)
-    if 'z' in data:
+
+    # Eixo Z (C13, C23, C33) - Tenta 'zz' ou 'z'
+    if 'zz' in data:
+        e, S = data['zz']['eps'], np.array(data['zz']['stress'])
+        for i in range(3): C[i, 2] = calculate_slope(e, S[:, i, i], CONV_FACTOR)
+    elif 'z' in data:
         e, S = data['z']['eps'], np.array(data['z']['stress'])
         for i in range(3): C[i, 2] = calculate_slope(e, S[:, i, i], CONV_FACTOR)
-    if 'yz' in data: C[3, 3] = calculate_slope(data['yz']['eps'], np.array(data['yz']['stress'])[:, 1, 2], CONV_FACTOR) / 2.0
-    if 'xz' in data: C[4, 4] = calculate_slope(data['xz']['eps'], np.array(data['xz']['stress'])[:, 0, 2], CONV_FACTOR) / 2.0
-    if 'xy' in data: C[5, 5] = calculate_slope(data['xy']['eps'], np.array(data['xy']['stress'])[:, 0, 1], CONV_FACTOR) / 2.0
+
+    # C44 (Shear YZ)
+    if 'yz' in data: 
+        C[3, 3] = calculate_slope(data['yz']['eps'], np.array(data['yz']['stress'])[:, 1, 2], CONV_FACTOR) / 2.0
+
+    # C55 (Shear XZ ou ZX) - Suas pastas usam 'zx'
+    if 'zx' in data: 
+        C[4, 4] = calculate_slope(data['zx']['eps'], np.array(data['zx']['stress'])[:, 0, 2], CONV_FACTOR) / 2.0
+    elif 'xz' in data:
+        C[4, 4] = calculate_slope(data['xz']['eps'], np.array(data['xz']['stress'])[:, 0, 2], CONV_FACTOR) / 2.0
+
+    # C66 (Shear XY)
+    if 'xy' in data: 
+        C[5, 5] = calculate_slope(data['xy']['eps'], np.array(data['xy']['stress'])[:, 0, 1], CONV_FACTOR) / 2.0
 
     C_sym = 0.5 * (C + C.T)
 

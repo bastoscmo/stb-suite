@@ -141,6 +141,112 @@ def get_int_input(prompt: str, default: int = None) -> int:
 # TOOL FUNCTIONS
 # ==========================================================
 
+def run_elastic_generator() -> None:
+    """Interface for the Elastic Constants Generator (elastic_inputs.py)"""
+    print("\n" + "="*60)
+    print(color_text("ELASTIC CONSTANTS GENERATOR", 'bold').center(60))
+    print("="*60 + "\n")
+    
+    # 1. Obter ficheiro de estrutura
+    input_file = get_input("Input structure file (fdf/poscar): ")
+    while not os.path.isfile(input_file):
+        print(color_text("File not found!", 'red'))
+        input_file = get_input("Input structure file: ")
+    
+    # 2. Obter deformação máxima e passos
+    max_strain = get_float_input("\nMax strain % (default: 2.0): ", 2.0)
+    steps = get_int_input("Number of steps per direction (default: 4): ", 4)
+    
+    # 3. MENU DE DIREÇÕES
+    print("\n" + "-"*60)
+    print(color_text("SELECT DEFORMATION MODE", 'cyan').center(60))
+    print("-"*60)
+    print(f"[{color_text('1', 'yellow')}] Full 3D Tensor  (xx, yy, zz, xy, xz, yz) -> Standard 3D")
+    print(f"[{color_text('2', 'yellow')}] Normal Strains  (xx, yy, zz)             -> Bulk Modulus")
+    print(f"[{color_text('3', 'yellow')}] Shear Strains   (xy, xz, yz)             -> Shear Modulus")
+    print(f"[{color_text('4', 'yellow')}] 2D In-Plane     (xx, yy, xy)             -> Graphene/Monolayers")
+    print(f"[{color_text('5', 'yellow')}] Uniaxial Z-Only (xx)                     -> Nanowires/Tubes")
+    print("-" * 60)
+    
+    mode = get_input("Select mode (1-5): ")
+    
+    # Mapeamento da escolha para as strings que o elastic_inputs.py entende
+    dirs_map = {
+        '1': ["xx", "yy", "zz", "xy", "zx", "yz"],
+        '2': ["xx", "yy", "zz"],
+        '3': ["xy", "zx", "yz"],
+        '4': ["xx", "yy", "xy"],
+        '5': ["xx"]
+    }
+    
+    # Se a escolha for inválida, assume o padrão (1)
+    selected_dirs = dirs_map.get(mode, dirs_map['1'])
+    print(f"Selected directions: {color_text(str(selected_dirs), 'green')}\n")
+    
+    # Construir comando
+    script_path = os.path.join(os.path.dirname(__file__), "elastic_inputs.py")
+    if not os.path.exists(script_path):
+        script_path = "elastic_inputs.py"
+
+    # Monta a lista de argumentos base
+    args = [
+        sys.executable, script_path, 
+        "--file", input_file, 
+        "--max", str(max_strain), 
+        "--steps", str(steps),
+        "--no-intro",
+        "--dirs" # Adiciona a flag --dirs
+    ]
+    
+    # Adiciona as direções escolhidas à lista de argumentos
+    args.extend(selected_dirs)
+    
+    try:
+        subprocess.check_call(args)
+        input(color_text("\nPress Enter to continue...", 'green'))
+    except subprocess.CalledProcessError:
+        print(color_text("\nError executing script.", 'red'))
+        input(color_text("\nPress Enter to continue...", 'green'))
+
+def run_elastic_analyzer() -> None:
+    """Interface for the Elastic Properties Analyzer """
+    print("\n" + "="*60)
+    print(color_text("ELASTIC PROPERTIES ANALYZER", 'bold').center(60))
+    print("="*60 + "\n")
+    
+    script_path = os.path.join(os.path.dirname(__file__), "elastic_analysis.py")
+    if not os.path.exists(script_path):
+        script_path = "elastic_analysis.py"
+        
+    args = [sys.executable, script_path]
+    
+    # --- NOVO: Solicita o nome do arquivo de output ---
+    print(color_text("Enter the Siesta output filename located inside strain folders.", 'yellow'))
+    output_filename = get_input("Filename (default: calc.out): ").strip()
+    
+    if not output_filename:
+        output_filename = "calc.out"
+    
+    # Passa o argumento -f/--file para o script elastic_analysis.py
+    args.extend(["--file", output_filename,"--no-intro"])
+    print(f"Targeting file: {color_text(output_filename, 'cyan')}\n")
+    # --------------------------------------------------
+    
+    print(f"Is this a {color_text('2D material', 'cyan')}? (affects stiffness units N/m vs GPa)")
+    is_2d = get_input("Enable 2D analysis? (y/N): ").lower()
+    if is_2d == 'y' or is_2d == 'yes':
+        args.append("--2d")
+        print(color_text("-> 2D Mode Enabled", 'green'))
+    
+    print(color_text("\nRunning analysis in current directory...", 'yellow'))
+    
+    try:
+        subprocess.check_call(args)
+        input(color_text("\nPress Enter to continue...", 'green'))
+    except subprocess.CalledProcessError:
+        print(color_text("\nError executing script.", 'red'))
+        input(color_text("\nPress Enter to continue...", 'green'))
+
 def run_input_generator() -> None:
     """Interface for the Input File Generator (stb-inputfile)"""
     print("\n" + "="*60)
@@ -362,30 +468,48 @@ def run_strain_generator() -> None:
     run_tool("stb-strain", args)
 
 def run_strain_post_processor() -> None:
-    """Interface for the Strain Post-Processing (stb-strainpos)"""
+    """Interface for the Strain Post-Processing (strain_analysis.py)"""
     print("\n" + "="*60)
-    print(color_text("STRAIN POST-PROCESSING (stb-strainpos)", 'bold').center(60))
+    print(color_text("STRAIN POST-PROCESSING ANALYZER", 'bold').center(60))
     print("="*60 + "\n")
-    
     print(color_text("This tool analyzes 'strain_*' folders in the current directory.", 'yellow'))
     
-    # Pergunta qual o nome do ficheiro de output dentro das pastas (ex: calc.out)
-    siesta_out = get_input("Siesta output filename inside folders (e.g., calc.out): ")
-    while not siesta_out.strip():
+    # Localiza o script strain_analysis.py no mesmo diretório
+    script_path = os.path.join(os.path.dirname(__file__), "strain_analysis.py")
+    if not os.path.exists(script_path):
+        # Fallback para tentar chamar como comando do sistema caso não esteja na pasta
+        script_path = "strain_analysis.py"
+        
+    args = [sys.executable, script_path]
+
+    # 1. Pergunta qual o nome do ficheiro de output
+    print(color_text("Enter the Siesta output filename located inside strain folders.", 'yellow'))
+    siesta_out = get_input("Filename (e.g., calc.out): ").strip()
+    while not siesta_out:
         print(color_text("Filename is required!", 'red'))
-        siesta_out = get_input("Siesta output filename inside folders: ")
+        siesta_out = get_input("Filename (e.g., calc.out): ").strip()
+        
     
-    # Pergunta o nome do ficheiro final de curva (opcional)
-    output_file = get_input("Output data file (default: stress_strain_curve.dat): ")
+    # Adiciona argumentos obrigatórios
+    args.extend(["--file", siesta_out, "--no-intro"])
     
-    args = ["--file", siesta_out]
+     
+    # 3. --- NOVO: Opção 2D ---
+    print(f"\nIs this a {color_text('2D material', 'cyan')}? (Calculates units in N/m)")
+    is_2d = get_input("Enable 2D analysis? (y/N): ").lower()
+    if is_2d == 'y' or is_2d == 'yes':
+        args.append("--2d")
+        print(color_text("-> 2D Mode Enabled (N/m)", 'green'))
+    # -------------------------
+
+    print(color_text("\nRunning analysis...", 'yellow'))
     
-    if output_file.strip():
-        args.extend(["--output", output_file])
-    
-    # Nota: O strain_pos.py fornecido não tem flag --no-intro, então não a passamos.
-    
-    run_tool("stb-strainpos", args)
+    try:
+        subprocess.check_call(args)
+        input(color_text("\nPress Enter to continue...", 'green'))
+    except subprocess.CalledProcessError:
+        print(color_text("\nError executing script.", 'red'))
+        input(color_text("\nPress Enter to continue...", 'green'))
 
 
 def run_bands_analyzer() -> None:
@@ -689,6 +813,9 @@ PREPARATION_TOOLS = {
     4: {'title': "Strain Generator (stb-strain)",
         'description': "Generate strained structures for calculations.",
         'func': run_strain_generator},
+    5: {'title': 'Elastic Constants Setup (stb-elasticInputs)',
+        'description': 'Generates deformed structures to calculate elastic constants.',
+        'func': run_elastic_generator},
 }
 
 
@@ -708,10 +835,13 @@ ANALYSIS_TOOLS = {
     5: {'title': "Symmetry Analyzer (stb-symmetry)",
         'description': "Analyze the symmetry of crystal structures.",
         'func': run_symmetry_analyzer},
-    6: {'title': "Strain Post-Processing (stb-strainpos)",
+    6: {'title': "Strain Post-Processing (stb-strainAnalysis)",
         'description': "Extract stress-strain curves from strain_* folders.",
         'func': run_strain_post_processor},
-}
+    7: {'title': 'Elastic Properties Analyzer (stb-elasticAnalysis)',
+        'description': 'Calculates Stiffness Matrix, Young Modulus and Stability from outputs.',
+        'func': run_elastic_analyzer},
+        }
 
 UTILITY_TOOLS = {
     1: {'title': "File Translator (stb-translate)",

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "stb_suite"
-version = "1.8.1"
+version = "1.9.0"
 description = "Siesta ToolBox (STB) suite with softwares pre and pos processing for Siesta code."
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -31,4 +31,6 @@ stb-dos = "stb.dos:main"
 stb-inputfile = "stb.inputfile:main"
 stb-kgrid = "stb.kgrid:main"
 stb-kpath = "stb.kpath:main"
-stb-strainpos="stb.strain_pos:main"
+stb-strainAnalysis="stb.strain_pos:main"
+stb-elasticInputs="stb.elastic_inputs:main"
+stb-elasticAnalysis="stb.elastic_analysis:main"

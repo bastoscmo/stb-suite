@@ -86,7 +86,7 @@ SystemName       siesta
   #stress 4  # Fixes YZ 
   #stress 5  # Fixes XZ 
   #stress 6  # Fixes XY 
-%endblock Geometry.Constraints
+#%endblock Geometry.Constraints
 
 ## Optional Parameters
   # %block Supercell
@@ -486,7 +486,7 @@ SystemName       siesta
   #stress 4  # Fixes YZ 
   #stress 5  # Fixes XZ 
   #stress 6  # Fixes XY 
-%endblock Geometry.Constraints
+#%endblock Geometry.Constraints
 
 
 ## Optional Parameters

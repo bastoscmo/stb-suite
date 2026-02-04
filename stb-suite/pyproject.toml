@@ -14,7 +14,10 @@ dependencies = [
     "matplotlib",
     "pymatgen",
     "spglib",
-    "sisl"
+    "sisl",
+    "pybader",
+    "setuptools",
+    "scipy==1.13.1"
 ]
 
 [project.scripts]
@@ -34,3 +37,4 @@ stb-kpath = "stb.kpath:main"
 stb-strainAnalysis="stb.strain_pos:main"
 stb-elasticInputs="stb.elastic_inputs:main"
 stb-elasticAnalysis="stb.elastic_analysis:main"
+stb-bader="stb.bader:main"

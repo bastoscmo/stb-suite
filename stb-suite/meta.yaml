@@ -28,6 +28,9 @@ requirements:
     - pymatgen
     - spglib
     - sisl
+    - pybader
+    - setuptools
+    - scipy==1.13.1
 
 about:
   home: "https://github.com/bastoscmo"

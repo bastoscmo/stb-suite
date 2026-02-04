@@ -321,7 +321,7 @@ def main():
     solve_bader(args.label, args.output, args.speed)
     
     print("\n" + "-" * 60)
-    rint(color_text("Electron counting is like accounting, but the currency is negative.\n", 'bold'))
+    print(color_text("Electron counting is like accounting, but the currency is negative.\n", 'bold'))
 
 if __name__ == "__main__":
     main()

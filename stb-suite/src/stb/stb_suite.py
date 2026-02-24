@@ -143,7 +143,7 @@ def get_int_input(prompt: str, default: int = None) -> int:
 
 
 def run_2d_stacker() -> None:
-    """Interface for the Monolayer Stacker (2Dstacking.py)"""
+    """Interface for the Monolayer Stacker (stb.stacking2D:main)"""
     print("\n" + "="*60)
     print(color_text("2D MONOLAYER STACKER", 'bold').center(60))
     print("="*60 + "\n")
@@ -162,10 +162,47 @@ def run_2d_stacker() -> None:
     # 2. Basic numerical parameters
     max_area = get_float_input("Max supercell area in Å² (default: 150.0): ", 150.0)
     max_strain = get_float_input("Max allowed strain fraction (default: 0.05): ", 0.05)
-    gap = get_float_input("Van der Waals gap in Å (default: 3.2): ", 3.2)
-    twist = get_float_input("Initial twist angle in degrees (default: 0.0): ", 0.0)
 
-    # 3. Strain Distribution Mode (Numbered Menu)
+    # 3. Van der Waals Gap Option (Numbered Menu)
+    print(f"\n{color_text('Select Van der Waals Gap Option:', 'yellow')}")
+    print(f"  {color_text('1', 'cyan')} = Default (3.2 Å)")
+    print(f"  {color_text('2', 'cyan')} = Manual (Single value)")
+    print(f"  {color_text('3', 'cyan')} = Range (Multiple values for Energy Curve)")
+    gap_choice = get_input("Select option (1-3) [default: 1]: ").strip()
+    
+    gap_args = []
+    if gap_choice == '2':
+        val = get_float_input("Enter Gap in Å: ", 3.2)
+        gap_args = ["-g", str(val)]
+    elif gap_choice == '3':
+        g_start = get_float_input("Start Gap in Å: ", 3.0)
+        g_end = get_float_input("End Gap in Å: ", 4.0)
+        # O script nativo usa np.linspace, logo precisa do número total de pontos (steps)
+        g_pts = int(get_float_input("Number of points/steps (e.g., 11): ", 11))
+        gap_args = ["--gap_range", str(g_start), str(g_end), str(g_pts)]
+    else:
+        gap_args = ["-g", "3.2"]
+
+    # 4. Stacking & Symmetry Mode (Numbered Menu)
+    print(f"\n{color_text('Select Stacking Mode:', 'yellow')}")
+    print(f"  {color_text('1', 'cyan')} = Default (twist=0.0, tx=0.0, ty=0.0)")
+    print(f"  {color_text('2', 'cyan')} = Manual (Define twist, tx, ty)")
+    print(f"  {color_text('3', 'cyan')} = High-Symmetry Points (Batch Mode)")
+    stack_mode = get_input("Select option (1-3) [default: 1]: ").strip()
+    
+    batch_sym = False
+    twist = 0.0
+    shift_x = 0.0
+    shift_y = 0.0
+    
+    if stack_mode == '3':
+        batch_sym = True
+    elif stack_mode == '2':
+        twist = get_float_input("Initial twist angle in degrees (default: 0.0): ", 0.0)
+        shift_x = get_float_input("Fractional shift for layer 2 in X axis [-tx] (default: 0.0): ", 0.0)
+        shift_y = get_float_input("Fractional shift for layer 2 in Y axis [-ty] (default: 0.0): ", 0.0)
+
+    # 5. Strain Distribution Mode (Numbered Menu)
     print(f"\n{color_text('Select Strain Distribution Mode:', 'yellow')}")
     print(f"  {color_text('1', 'cyan')} = Top (Strain layer 2 to match layer 1) [Default]")
     print(f"  {color_text('2', 'cyan')} = Bottom (Strain layer 1 to match layer 2)")
@@ -175,47 +212,51 @@ def run_2d_stacker() -> None:
     sm_map = {'1': 'top', '2': 'bottom', '3': 'sym'}
     strain_mode = sm_map.get(sm_choice, 'top')
 
-    # 4. Batch Symmetry Option (Numbered Menu)
-    print(f"\n{color_text('Generate all high-symmetry stackings automatically?', 'yellow')}")
-    print(f"  {color_text('1', 'cyan')} = No (Default)")
-    print(f"  {color_text('2', 'cyan')} = Yes (--batch_sym)")
-    sym_choice = get_input("Select option (1-2) [default: 1]: ").strip()
-    batch_sym = (sym_choice == '2')
-
-    # Build execution command
+    # Resolve script execution path
     script_path = os.path.join(os.path.dirname(__file__), "stacking2D.py")
     if not os.path.exists(script_path):
-        script_path = "stb-2Dstacking" # Fallback
+        script_path = "stb-2Dstacking" # Fallback to pip installed entry point
 
-    # Base arguments: -i is ALWAYS included as requested
+    # 6. Build Command and Execute ONCE
     args = [
-        sys.executable, script_path, 
+        sys.executable if "stb-2Dstacking" not in script_path else script_path, 
         "-l1", layer1, 
         "-l2", layer2, 
-        "-i", 
+        "-i", # Always included as requested
         "-a", str(max_area), 
         "-s", str(max_strain), 
-        "-g", str(gap),
-        "-t", str(twist),
         "-sm", strain_mode,
         "--no-intro"
     ]
 
+    # Fix sys.executable requirement if using global entry point
+    if script_path == "stb-2Dstacking":
+        args.pop(0) 
+        args.insert(0, script_path)
+    else:
+        args.insert(1, script_path)
+
+    # Adiciona os argumentos de Gap (seja -g ou --gap_range)
+    args.extend(gap_args)
+
+    # Adiciona os argumentos de Simetria e Empilhamento
     if batch_sym:
         args.append("--batch_sym")
+    else:
+        args.extend(["-t", str(twist), "-tx", str(shift_x), "-ty", str(shift_y)])
 
-    print(color_text("\nRunning 2D Stacker...", 'green'))
+    print(color_text(f"\n--- Running 2D Stacker ---", 'green'))
     
     try:
+        # A chamada é feita uma única vez. O stacking2D.py lida com o resto.
         subprocess.check_call(args)
     except subprocess.CalledProcessError:
-        print(color_text("\nError executing 2Dstacking script.", 'red'))
+        print(color_text(f"\nError executing 2Dstacking script.", 'red'))
         print(color_text("Please check if the FDF files are valid and formatted correctly.", 'yellow'))
+    except FileNotFoundError:
+         print(color_text(f"\nError: Could not find '{script_path}'. Make sure the package is installed.", 'red'))
     
     input(color_text("\nPress Enter to continue...", 'green'))
-
-
-
 def run_grid_to_cube() -> None:
     """Interface for the Grid to Cube Converter (cube.py)"""
     print("\n" + "="*60)

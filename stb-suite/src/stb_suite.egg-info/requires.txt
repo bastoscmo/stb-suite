@@ -1,6 +1,0 @@
-numpy
-ase
-matplotlib
-pymatgen
-spglib
-sisl

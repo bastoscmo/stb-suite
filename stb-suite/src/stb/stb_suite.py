@@ -183,9 +183,9 @@ def run_2d_stacker() -> None:
     batch_sym = (sym_choice == '2')
 
     # Build execution command
-    script_path = os.path.join(os.path.dirname(__file__), "2Dstacking.py")
+    script_path = os.path.join(os.path.dirname(__file__), "stacking2D.py")
     if not os.path.exists(script_path):
-        script_path = "2Dstacking.py" # Fallback
+        script_path = "stb-2Dstacking" # Fallback
 
     # Base arguments: -i is ALWAYS included as requested
     args = [

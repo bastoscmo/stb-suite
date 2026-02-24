@@ -17,7 +17,7 @@ dependencies = [
     "sisl",
     "pybader",
     "setuptools",
-    "scipy==1.13.1"
+    "scipy"
 ]
 
 [project.scripts]
@@ -41,3 +41,4 @@ stb-bader="stb.bader:main"
 stb-cube="stb.cube:main"
 stb-density="stb.density:main"
 stb-workfunction="stb.workfunction:main"
+stb-2Dstacking="stb.stacking2D:main"

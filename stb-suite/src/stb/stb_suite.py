@@ -142,6 +142,79 @@ def get_int_input(prompt: str, default: int = None) -> int:
 # ==========================================================
 
 
+def run_2d_stacker() -> None:
+    """Interface for the Monolayer Stacker (2Dstacking.py)"""
+    print("\n" + "="*60)
+    print(color_text("2D MONOLAYER STACKER", 'bold').center(60))
+    print("="*60 + "\n")
+    
+    # 1. Get Input Files
+    layer1 = get_input("Bottom Monolayer FDF file (-l1): ").strip()
+    while not os.path.isfile(layer1):
+        print(color_text("File not found!", 'red'))
+        layer1 = get_input("Bottom Monolayer FDF file (-l1): ").strip()
+
+    layer2 = get_input("Top Monolayer FDF file (-l2): ").strip()
+    while not os.path.isfile(layer2):
+        print(color_text("File not found!", 'red'))
+        layer2 = get_input("Top Monolayer FDF file (-l2): ").strip()
+
+    # 2. Basic numerical parameters
+    max_area = get_float_input("Max supercell area in Å² (default: 150.0): ", 150.0)
+    max_strain = get_float_input("Max allowed strain fraction (default: 0.05): ", 0.05)
+    gap = get_float_input("Van der Waals gap in Å (default: 3.2): ", 3.2)
+    twist = get_float_input("Initial twist angle in degrees (default: 0.0): ", 0.0)
+
+    # 3. Strain Distribution Mode (Numbered Menu)
+    print(f"\n{color_text('Select Strain Distribution Mode:', 'yellow')}")
+    print(f"  {color_text('1', 'cyan')} = Top (Strain layer 2 to match layer 1) [Default]")
+    print(f"  {color_text('2', 'cyan')} = Bottom (Strain layer 1 to match layer 2)")
+    print(f"  {color_text('3', 'cyan')} = Sym (Symmetric strain on both layers)")
+    sm_choice = get_input("Select mode (1-3) [default: 1]: ").strip()
+    
+    sm_map = {'1': 'top', '2': 'bottom', '3': 'sym'}
+    strain_mode = sm_map.get(sm_choice, 'top')
+
+    # 4. Batch Symmetry Option (Numbered Menu)
+    print(f"\n{color_text('Generate all high-symmetry stackings automatically?', 'yellow')}")
+    print(f"  {color_text('1', 'cyan')} = No (Default)")
+    print(f"  {color_text('2', 'cyan')} = Yes (--batch_sym)")
+    sym_choice = get_input("Select option (1-2) [default: 1]: ").strip()
+    batch_sym = (sym_choice == '2')
+
+    # Build execution command
+    script_path = os.path.join(os.path.dirname(__file__), "2Dstacking.py")
+    if not os.path.exists(script_path):
+        script_path = "2Dstacking.py" # Fallback
+
+    # Base arguments: -i is ALWAYS included as requested
+    args = [
+        sys.executable, script_path, 
+        "-l1", layer1, 
+        "-l2", layer2, 
+        "-i", 
+        "-a", str(max_area), 
+        "-s", str(max_strain), 
+        "-g", str(gap),
+        "-t", str(twist),
+        "-sm", strain_mode,
+        "--no-intro"
+    ]
+
+    if batch_sym:
+        args.append("--batch_sym")
+
+    print(color_text("\nRunning 2D Stacker...", 'green'))
+    
+    try:
+        subprocess.check_call(args)
+    except subprocess.CalledProcessError:
+        print(color_text("\nError executing 2Dstacking script.", 'red'))
+        print(color_text("Please check if the FDF files are valid and formatted correctly.", 'yellow'))
+    
+    input(color_text("\nPress Enter to continue...", 'green'))
+
+
 
 def run_grid_to_cube() -> None:
     """Interface for the Grid to Cube Converter (cube.py)"""
@@ -1035,7 +1108,10 @@ PREPARATION_TOOLS = {
     5: {'title': 'Elastic Constants Setup (stb-elasticInputs)',
         'description': 'Generates deformed structures to calculate elastic constants.',
         'func': run_elastic_generator},
-}
+    6:  {'title': '2D Monolayer Stacker (stb-2Dstacking)',
+         'description': 'Stacks two monolayers into a heterostructure using the ZSL algorithm.',
+         'func': run_2d_stacker},
+         }
 
 
 ANALYSIS_TOOLS = {

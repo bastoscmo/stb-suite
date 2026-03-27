@@ -1,0 +1,208 @@
+
+## ===================================================================
+## SYSTEM DEFINITION
+## ===================================================================
+##Essential Parameters
+SystemLabel      siesta
+SystemName       siesta
+
+## Include the structure file generated with STB-SUITE
+%include structure.fdf
+
+#%block Geometry.Constraints
+  #stress 1  # Fixes XX 
+  #stress 2  # Fixes YY
+  #stress 3  # Fixes ZZ 
+  #stress 4  # Fixes YZ 
+  #stress 5  # Fixes XZ 
+  #stress 6  # Fixes XY 
+#%endblock Geometry.Constraints
+
+## Optional Parameters
+  # %block Supercell
+  # %endblock Supercell
+  # %block Zmatrix
+  # %endblock Zmatrix
+  # ZM.UnitsLength Bohr
+  # ZM.UnitsAngle  rad
+
+## ===================================================================
+## BASIS SET DEFINITION
+## ===================================================================
+##Essential Parameters
+PAO.BasisType       split
+PAO.BasisSize       DZP
+PAO.EnergyShift     0.01 Ry
+
+## Optional Parameters
+  # PAO.SplitNorm 0.15
+  # PAO.SplitNormH 
+  # PAO.SplitTailNorm true
+  # PAO.SplitValence.Legacy false
+  # PAO.FixSplitTable false
+  # PAO.EnergyCutoff 20 Ry
+  # PAO.EnergyPolCutoff 20 Ry
+  # PAO.ContractionCutoff 0
+  # %block PAO.Basis
+  # %endblock PAO.Basis
+
+## ===================================================================
+## K-POINT SAMPLING (BRILLOUIN ZONE)
+## ===================================================================
+##Essential Parameters
+kgrid.MonkhorstPack   [7  7  2]
+Mesh.CutOff           320  Ry  
+FilterCutoff          150  Ry
+
+## Optional Parameters
+  # %block kgrid.MonkhostPack
+  # %endblock MonkhostPack
+  # ChangeKgridInMD true
+  # TimeReversalSymmetryForKpoint true
+
+## ===================================================================
+## EXCHANGE-CORRELATION (XC) FUNCTIONAL
+## ===================================================================
+##Essential Parameters
+XC.Functional       GGA
+XC.Authors          PBE
+
+## Optional Parameters
+  # %block XC.mix
+  # %endblock XC.mix
+
+## ===================================================================
+## SPIN POLARIZATION
+## ===================================================================
+##Essential Parameters
+Spin                non-polarized
+
+## Optional Parameters
+  # Spin.Fix false
+  # Spin.Total 0
+  # SingleExcitation False
+  # Spin.OrbitStrength 1.0
+
+## ===================================================================
+## SELF-CONSISTENT-FIELD (SCF)
+## ===================================================================
+##Essential Parameters
+MaxSCFIterations        300
+SCF.Mixer.Weight        0.1
+SCF.DM.Tolerance        1.0d-5  eV
+SCF.Mixer.History       6
+ElectronicTemperature   300 K
+Diag.ParallelOverK      .true.
+
+## Optional Parameters
+  # SCF.MustConverge true 
+  # SCF.Mix Hamiltonian
+  # SCF.Mix.Spin all
+  # SCF.Mixer.Method Pulay
+  # SCF.Mixer.Variant original
+  # SCF.Mixer.Kick 0
+  # SCF.Mixer.Kick.Weight
+  # SCF.Mixer.Restart 0
+  # SCF.Mixer.Restart.Save 1
+  # SCF.Mixer.Linear.After -1
+  # SCF.Mixer.Linear.After.Weight
+  # SCF.Mixer.History 10
+
+## ===================================================================
+## VAN DER WAALS CORRECTIONS (GRIMME DFT-D3)
+## ===================================================================
+##Essential Parameters
+DFTD3                   .true.
+
+## Optional Parameters
+  # DFTD3.UseXCDefaults true
+  # DFTD3.BJdamping true
+  # DFTD3.s6 1.0
+  # DFTD3.rs6 1.0
+  # DFTD3.s8 1.0
+  # DFTD3.rs8 1.0
+  # DFTD3.alpha 14.0
+  # DFTD3.a1 0.4
+  # DFTD3.a2 5.0
+  # DFTD3.2bodyCutOff 60.0 bohr
+  # DFTD3.BodyCutoff 40.0 bohr
+  # DFTD3.CoordinationCutoff 10.0 bohr
+
+## ===================================================================
+## STRUCTURE RELAXATION (MOLECULAR DYNAMICS - MD)
+## ===================================================================
+##Essential Parameters
+MD.TypeOfRun            CG
+MD.VariableCell         true
+MD.MaxForceTol          0.01 eV/Ang
+MD.Steps                150
+
+## Optional Parameters
+  # MD.RelaxCellOnly true
+  # Constant.Volume false
+  # MD.MaxStressTol 1 GPa
+  # MD.MaxDispl 0.2 Bohr
+  # MD.PreconditionVariableCell 5 Ang
+  # MD.Broyden.History.Steps 5
+  # MD.Broyden.Cycle.On.Mait true
+  # Target.Pressure 0 GPa
+  # MD.RemoveIntramáscularPressure false
+
+## ===================================================================
+## NUMERICAL SOLUTION (ELECTRONIC STRUCTURE)
+## ===================================================================
+## Optional Parameters (All parameters in this section were optional)
+  # SolutionMethod diagon
+  # NumberOfEigenStates 
+  # Diag.Use2D true
+  # Diag.ProcessorY (can be ~sqrt(N processors))
+  # Diag.BlockSize 
+  # Diag.Algorithm Divide-and-Conquer
+  # Diag.Memory 1
+  # Diag.UpperLower lower
+  # OccupationFunction FD
+  # OccupationMPOrder 1
+
+## ===================================================================
+## STARTING THE CALCULATION (Using previous results)
+## ===================================================================
+##Essential Parameters
+DM.UseSaveDM            .true.  #(Use previous Density Matrix if available)
+
+## Optional Parameters (Set to false or inactive)
+  # MD.UseSaveZM  .false.
+  # MD.UseSaveCG  .false.  
+  # ON.UseSaveLWF  .false.  
+
+## ===================================================================
+## OUTPUT FILES
+## ===================================================================
+##Essential Parameters (Active output flags)
+WriteCoorInitial        .true.
+WriteMDHistory          .true.
+WriteCoorStep           .true.
+WriteForces             .true.
+WriteCoorXmol           .true.
+WriteMDXmol             .true.
+
+## Optional Parameters (Interface flags)
+  #SaveHS                 .true.
+  #SaveRho                .true.
+  #CDF.Save               .true.
+  #CDF.Compress           9
+
+## Optional Parameters (Other output flags)
+  # LongOutPut false
+  # WriteKpoints false
+  # WriteOrbMom false
+  # SCF.Write.Extra false
+  # WriteEigenvalues false
+  # On.UseSaveLWF false
+
+## Optional Parameters (Wave Function Output)
+  # WriteKBands false
+  # WriteBands false
+  # WFS.Write.For.Bands false
+  # WFS.Band.Min 1
+  # WFS.Band.Max 30
+  # WaveFuncKPointsScale pi/a

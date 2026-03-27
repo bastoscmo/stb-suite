@@ -1,0 +1,31 @@
+# automatic create using stb-translate (https://github.com/bastoscmo/stb-suite)
+data_generated
+_symmetry_space_group_name_H-M   'P 1'
+_symmetry_Int_Tables_number      1
+_cell_length_a    5.90799999
+_cell_length_b    5.90799999
+_cell_length_c    20.00000000
+_cell_angle_alpha  90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma  120.00000000
+ 
+loop_
+_symmetry_equiv_pos_as_xyz
+  'x, y, z'
+ 
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+C   C   0.776380002   0.288109988   0.500000000
+C   C   0.711880028   0.488260001   0.500000000
+C   C   0.511740029   0.223619998   0.500000000
+C   C   0.288109988   0.776380002   0.500000000
+C   C   0.488260001   0.711880028   0.500000000
+C   C   0.223619998   0.511739969   0.500000000
+C   C   0.000000000   0.000000000   0.500000000
+C   C   0.000000000   0.251800001   0.500000000
+C   C   0.748190045   0.748189986   0.500000000
+C   C   0.251809984   0.000000000   0.500000000

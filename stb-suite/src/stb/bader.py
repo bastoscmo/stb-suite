@@ -20,21 +20,21 @@ warnings.filterwarnings("ignore", category=UserWarning, module="pybader")
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # --- Library Imports ---
-try:
-    import sisl
-except ImportError:
-    print("\033[91m[CRITICAL] Library 'sisl' not found.\033[0m")
-    sys.exit(1)
+#try:
+import sisl
+#except ImportError:
+#    print("\033[91m[CRITICAL] Library 'sisl' not found.\033[0m")
+#    sys.exit(1)
 
-try:
-    from pybader.interface import Bader as PyBaderCalc
-except ImportError:
-    try:
-        import pybader
-        PyBaderCalc = pybader.interface.Bader
-    except Exception:
-        print("\033[91m[CRITICAL] Could not initialize PyBader interface. Install setuptools.\033[0m")
-        sys.exit(1)
+#try:
+from pybader.interface import Bader as PyBaderCalc
+#except ImportError:
+#    try:
+import pybader
+PyBaderCalc = pybader.interface.Bader
+#    except Exception:
+#        print("\033[91m[CRITICAL] Could not initialize PyBader interface. Install setuptools.\033[0m")
+#        sys.exit(1)
 
 
 # ================= ANSI COLORS =================

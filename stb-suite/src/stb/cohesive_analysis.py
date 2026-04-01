@@ -215,10 +215,10 @@ def main():
         print(color_text("\n[ERROR] Cannot calculate cohesive energy because some calculations are missing or incomplete.", 'red'))
         sys.exit(1)
 
-    # Cohesive Energy Formula: E_coh = (Sum(E_iso) - E_bulk) / N_atoms
-    # Positive value means a bound, stable structure.
+	# Cohesive Energy Formula: E_coh = (E_bulk - Sum(E_iso)) / N_atoms
+	# Negative value means a bound, stable structure.
     print("\n[INFO] Calculating Cohesive Energy ...")
-    e_coh_total = sum_isolated_energy - e_bulk
+    e_coh_total =  e_bulk - sum_isolated_energy
     e_coh_per_atom = e_coh_total / total_atoms
 
     print("\n[INFO] FINAL RESULTS:")

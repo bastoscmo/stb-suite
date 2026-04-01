@@ -1,0 +1,24 @@
+[console_scripts]
+stb-2Dstacking = stb.stacking2D:main
+stb-bader = stb.bader:main
+stb-bands = stb.bands:main
+stb-clean = stb.clean:main
+stb-cohesive = stb.cohesive_energy:main
+stb-cohesiveAnalysis = stb.cohesive_analysis:main
+stb-convdos = stb.convdos:main
+stb-cube = stb.cube:main
+stb-density = stb.density:main
+stb-dos = stb.dos:main
+stb-elasticAnalysis = stb.elastic_analysis:main
+stb-elasticInputs = stb.elastic_inputs:main
+stb-inputfile = stb.inputfile:main
+stb-kgrid = stb.kgrid:main
+stb-kpath = stb.kpath:main
+stb-siesta2wtb = stb.wantibexos:main
+stb-strain = stb.strain:main
+stb-strainAnalysis = stb.strain_pos:main
+stb-structural = stb.structural:main
+stb-suite = stb.stb_suite:main
+stb-symmetry = stb.symmetry:main
+stb-translate = stb.translate:main
+stb-workfunction = stb.workfunction:main

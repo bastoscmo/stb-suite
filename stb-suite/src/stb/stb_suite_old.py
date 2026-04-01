@@ -142,70 +142,6 @@ def get_int_input(prompt: str, default: int = None) -> int:
 # ==========================================================
 
 
-def run_cohesive_setup() -> None:
-    """Interface for the Cohesive Energy Setup (cohesive_energy.py)"""
-    print("\n" + "="*60)
-    print(color_text("COHESIVE ENERGY SETUP", 'bold').center(60))
-    print("="*60 + "\n")
-    
-    # 1. Obter arquivo de estrutura
-    struct_file = get_input("Input structure FDF file (-s): ").strip()
-    while not os.path.isfile(struct_file):
-        print(color_text("File not found!", 'red'))
-        struct_file = get_input("Input structure FDF file (-s): ").strip()
-        
-    # 2. Obter densidade K
-    k_density = get_float_input("K-point density (default: 0.2): ", 0.2)
-    
-    # 3. Obter caminho do PP
-    pp_path = get_input("Pseudopotentials folder path (-p) [optional, press Enter to skip]: ").strip()
-    
-    # 4. Spin polarization
-    spin_choice = get_input("Enable spin polarization for full structure? (y/N): ").strip().lower()
-    
-    args = [
-        "-s", struct_file,
-        "-k", str(k_density),
-        "--no-intro"
-    ]
-    
-    if pp_path:
-        args.extend(["-p", pp_path])
-    if spin_choice in ['y', 'yes']:
-        args.append("--spin")
-        
-    # Executa o script. Se não tiver os atalhos globais configurados,
-    # pode alterar "stb_cohesive" para "python cohesive_energy.py" 
-    run_tool("stb-cohesive", args)
-
-
-def run_cohesive_analysis() -> None:
-    """Interface for the Cohesive Energy Analysis (cohesive_analysis.py)"""
-    print("\n" + "="*60)
-    print(color_text("COHESIVE ENERGY ANALYSIS", 'bold').center(60))
-    print("="*60 + "\n")
-    
-    # 1. Obter nome do ficheiro de output
-    out_file = get_input("SIESTA output file name (e.g., calc.out) [-o]: ").strip()
-    while not out_file:
-        print(color_text("File name cannot be empty!", 'red'))
-        out_file = get_input("SIESTA output file name [-o]: ").strip()
-        
-    # 2. Obter o diretório alvo
-    dir_path = get_input("Path to results folder containing 'structure' and 'atoms' (default: current dir) [-d]: ").strip()
-    
-    args = [
-        "-o", out_file,
-        "--no-intro"
-    ]
-    
-    if dir_path:
-        args.extend(["-d", dir_path])
-        
-    # Executa o script. Se não tiver atalho configurado, altere para "python cohesive_analysis.py"
-    run_tool("stb-cohesiveAnalysis", args)
-
-
 def run_2d_stacker() -> None:
     """Interface for the Monolayer Stacker (stb.stacking2D:main)"""
     print("\n" + "="*60)
@@ -1216,10 +1152,6 @@ PREPARATION_TOOLS = {
     6:  {'title': '2D Monolayer Stacker (stb-2Dstacking)',
          'description': 'Stacks two monolayers into a heterostructure using the ZSL algorithm.',
          'func': run_2d_stacker},
-    7: {
-        'title': "Cohesive Energy Setup (stb-cohesive)", 
-        'description': "Prepare folder structure and inputs for cohesive energy calculations.", 
-        'func': run_cohesive_setup},
          }
 
 
@@ -1245,15 +1177,12 @@ ANALYSIS_TOOLS = {
     7: {'title': 'Elastic Properties Analyzer (stb-elasticAnalysis)',
         'description': 'Calculates Stiffness Matrix, Young Modulus and Stability from outputs.',
         'func': run_elastic_analyzer},
-    8: {'title': 'Bader Charge Analysis',
+    8: {
+        'title': 'Bader Charge Analysis',
         'description': 'Calculate atomic charges using the Bader AIM method from .RHO and .XV files.',
         'func': run_bader_calculator},
-    9: {'title': "Work Function Calculator", 'description': "Calculate Work Function from electrostatic potential (.VT).",
-        'func': run_workfunction_calculator},
-   10: {'title': "Density Plotter (RHO)", 'description': "Export 2D Charge Density Maps or 3D Clouds.",
-        'func': run_density_plotter},
-   11: {'title': "Cohesive Energy Analysis (stb_cohesive_analysis)", 'description': "Process and calculate the final cohesive energy per atom.", 
-        'func': run_cohesive_analysis},     
+    9: {'title': "Work Function Calculator", 'description': "Calculate Work Function from electrostatic potential (.VT).", 'func': run_workfunction_calculator},
+    10: {'title': "Density Plotter (RHO)", 'description': "Export 2D Charge Density Maps or 3D Clouds.", 'func': run_density_plotter},    
         }
     
 

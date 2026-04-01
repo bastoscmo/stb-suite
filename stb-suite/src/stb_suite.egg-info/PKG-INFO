@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: stb_suite
+Version: 1.9.0
+Summary: Siesta ToolBox (STB) suite with softwares pre and pos processing for Siesta code.
+Description-Content-Type: text/markdown
+Requires-Dist: numpy
+Requires-Dist: ase
+Requires-Dist: matplotlib
+Requires-Dist: pymatgen
+Requires-Dist: spglib
+Requires-Dist: sisl
+Requires-Dist: pybader
+Requires-Dist: setuptools
+Requires-Dist: scipy

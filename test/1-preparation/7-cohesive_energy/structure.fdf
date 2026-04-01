@@ -1,0 +1,35 @@
+# automatic create translation file using sstranslate
+
+
+NumberOfSpecies    1
+NumberofAtoms      10
+
+
+%block ChemicalSpeciesLabel
+ 1   6   C
+%endblock ChemicalSpeciesLabel 
+
+LatticeConstant 1.0 Ang 
+
+AtomicCoordinatesFormat  Fractional 
+
+
+%block LatticeVectors
+ 5.9079999924   0.0000000000   0.0000000000 
+ -2.9539999962   5.1164780790   0.0000000000 
+ 0.0000000000   0.0000000000   20.0000000000 
+%endblock LatticeVectors
+
+
+%block AtomicCoordinatesAndAtomicSpecies
+  0.776380002   0.288109988   0.500000000   1  
+  0.711880028   0.488260001   0.500000000   1  
+  0.511740029   0.223619998   0.500000000   1  
+  0.288109988   0.776380002   0.500000000   1  
+  0.488260001   0.711880028   0.500000000   1  
+  0.223619998   0.511739969   0.500000000   1  
+  0.000000000   0.000000000   0.500000000   1  
+  0.000000000   0.251800001   0.500000000   1  
+  0.748190045   0.748189986   0.500000000   1  
+  0.251809984   0.000000000   0.500000000   1  
+%endblock AtomicCoordinatesAndAtomicSpecies

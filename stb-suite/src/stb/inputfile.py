@@ -977,8 +977,8 @@ def compute_monkhorts(cella, cellb, cellc, k_density):
 
 def copy_pseudopotentials(species_list, pp_path):
     """
-    Copies the required .psml files from the 'pp_path' folder to
-    the current working directory.
+    Copies the required .psml or .psf files from the 'pp_path' folder to
+    the current working directory. Prioritizes .psml if both exist.
     Returns a list of warnings/errors.
     """
     warnings = []
@@ -989,25 +989,43 @@ def copy_pseudopotentials(species_list, pp_path):
     print("\n--- Copying Pseudopotentials ---")
     copied_files = 0
     for symbol in species_list:
-        pp_filename = f"{symbol}.psml"
-        source_file = os.path.join(pp_path, pp_filename)
-        dest_file = os.path.join(os.getcwd(), pp_filename)
+        psml_filename = f"{symbol}.psml"
+        psf_filename = f"{symbol}.psf"
         
-        if os.path.exists(source_file):
+        source_psml = os.path.join(pp_path, psml_filename)
+        source_psf = os.path.join(pp_path, psf_filename)
+        
+        dest_psml = os.path.join(os.getcwd(), psml_filename)
+        dest_psf = os.path.join(os.getcwd(), psf_filename)
+        
+        # Verifica se o .psml existe (prioridade 1)
+        if os.path.exists(source_psml):
             try:
-                shutil.copy2(source_file, dest_file)
-                print(f"  ✅ Copied: {pp_filename}")
+                shutil.copy2(source_psml, dest_psml)
+                print(f"  ✅ Copied: {psml_filename}")
                 copied_files += 1
             except Exception as e:
-                warnings.append(f"  [ERROR] Failed to copy {pp_filename}: {e}")
+                warnings.append(f"  [ERROR] Failed to copy {psml_filename}: {e}")
+                
+        # Se não tiver .psml, tenta o .psf (prioridade 2)
+        elif os.path.exists(source_psf):
+            try:
+                shutil.copy2(source_psf, dest_psf)
+                print(f"  ✅ Copied: {psf_filename}")
+                copied_files += 1
+            except Exception as e:
+                warnings.append(f"  [ERROR] Failed to copy {psf_filename}: {e}")
+                
+        # Nenhum dos dois foi encontrado
         else:
-            warnings.append(f"  [WARNING] File not found: {source_file}")
+            warnings.append(f"  [WARNING] Neither {psml_filename} nor {psf_filename} found in {pp_path}")
 
     if copied_files == len(species_list):
         print("All pseudopotentials copied successfully.")
     else:
         warnings.append("Warning: Some PP files were not found or could not be copied.")
     print("----------------------------------")
+    
     return warnings
 
 # --- Main Generation Logic Function ---

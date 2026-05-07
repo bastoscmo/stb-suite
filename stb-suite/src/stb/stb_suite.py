@@ -180,10 +180,13 @@ def run_phonon_postprocessing() -> None:
     tmax = get_float_input("Maximum temperature (K) [default: 1000]: ", 1000.0)
     tstep = get_float_input("Temperature step (K) [default: 10]: ", 10.0)
         
-    # 5. Preparar e executar o script
-    script_path = os.path.join(os.path.dirname(__file__), "phonons_post.py")
+
+    suite_dir = os.path.dirname(os.path.realpath(__file__))
+    script_path = os.path.join(suite_dir, "phonons_pos.py")
+    
     if not os.path.exists(script_path):
-        script_path = "phonons_post.py" 
+        print(color_text(f"\n[ERROR] Core script missing: {script_path}", 'red'))
+        return
     
     args = [
         sys.executable, script_path,
@@ -250,9 +253,8 @@ def run_phonon_generator() -> None:
         pseudo_dir = "."
         
     # 6. Preparar e executar o script
-    script_path = os.path.join(os.path.dirname(__file__), "phonons_create.py")
-    if not os.path.exists(script_path):
-        script_path = "phonons_create.py" # Fallback caso esteja rodando solto
+    suite_dir = os.path.dirname(os.path.realpath(__file__))
+    script_path = os.path.join(suite_dir, "phonons_create.py")
     
     args = [
         sys.executable, script_path,

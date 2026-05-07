@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "stb_suite"
-version = "1.9.0"
+version = "1.9.1"
 description = "Siesta ToolBox (STB) suite with softwares pre and pos processing for Siesta code."
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -17,7 +17,8 @@ dependencies = [
     "sisl",
     "pybader",
     "setuptools",
-    "scipy"
+    "scipy",
+    "phonopy"
 ]
 
 [project.scripts]
@@ -44,3 +45,5 @@ stb-workfunction="stb.workfunction:main"
 stb-2Dstacking="stb.stacking2D:main"
 stb-cohesive="stb.cohesive_energy:main"
 stb-cohesiveAnalysis="stb.cohesive_analysis:main"
+stb-phononsCreate="stb.phonons_create:main"
+stb-phononsPos="stb.phonons_pos:main"

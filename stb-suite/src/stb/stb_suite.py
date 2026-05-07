@@ -142,6 +142,139 @@ def get_int_input(prompt: str, default: int = None) -> int:
 # ==========================================================
 
 
+def run_phonon_postprocessing() -> None:
+    """Interface for the Phonon Post-Processing (phonons_post.py)"""
+    print("\n" + "="*60)
+    print(color_text("PHONON POST-PROCESSING", 'bold').center(60))
+    print("="*60 + "\n")
+    
+    # 1. Diretório
+    phonon_dir = get_input("Phonon runs directory [default: phonon_runs]: ").strip()
+    if not phonon_dir:
+        phonon_dir = "phonon_runs"
+        
+    # 2. System Label
+    sys_label = get_input("SystemLabel used in calculations [default: siesta]: ").strip()
+    if not sys_label:
+        sys_label = "siesta"
+        
+    # 3. Malha Q (Mesh)
+    mesh_input = get_input("\nQ-point mesh (e.g. '20 20 20') [default: 20 20 20]: ").strip()
+    if not mesh_input:
+        m_x, m_y, m_z = 20, 20, 20
+    else:
+        try:
+            dims = [int(x) for x in mesh_input.split()]
+            if len(dims) == 3:
+                m_x, m_y, m_z = dims
+            else:
+                print(color_text("Please provide exactly 3 integers. Using default 20 20 20.", 'yellow'))
+                m_x, m_y, m_z = 20, 20, 20
+        except ValueError:
+            print(color_text("Invalid input format. Using default 20 20 20.", 'yellow'))
+            m_x, m_y, m_z = 20, 20, 20
+
+    # 4. Temperaturas
+    print(f"\n{color_text('Thermal Properties Settings:', 'yellow')}")
+    tmin = get_float_input("Minimum temperature (K) [default: 0]: ", 0.0)
+    tmax = get_float_input("Maximum temperature (K) [default: 1000]: ", 1000.0)
+    tstep = get_float_input("Temperature step (K) [default: 10]: ", 10.0)
+        
+    # 5. Preparar e executar o script
+    script_path = os.path.join(os.path.dirname(__file__), "phonons_post.py")
+    if not os.path.exists(script_path):
+        script_path = "phonons_post.py" 
+    
+    args = [
+        sys.executable, script_path,
+        "-dir", phonon_dir,
+        "-l", sys_label,
+        "-m", str(m_x), str(m_y), str(m_z),
+        "--tmin", str(tmin),
+        "--tmax", str(tmax),
+        "--tstep", str(tstep),
+        "--no-intro"
+    ]
+    
+    print(color_text("\nStarting Phonon post-processing...", 'green'))
+    
+    try:
+        subprocess.check_call(args)
+    except subprocess.CalledProcessError:
+        print(color_text("\nError executing post-processing script.", 'red'))
+        
+    input(color_text("\nPress Enter to continue...", 'green'))
+    
+    
+
+
+def run_phonon_generator() -> None:
+    """Interface for the Phonon Displacement Generator (phonons_create.py)"""
+    print("\n" + "="*60)
+    print(color_text("PHONON DISPLACEMENT GENERATOR", 'bold').center(60))
+    print("="*60 + "\n")
+    
+    # 1. Obter arquivo de estrutura
+    structure_file = get_input("Input structure file [default: structure.fdf]: ").strip()
+    if not structure_file:
+        structure_file = "structure.fdf"
+        
+    # 2. Obter arquivo de cálculo
+    calc_file = get_input("Calculation parameters file [default: calc.fdf]: ").strip()
+    if not calc_file:
+        calc_file = "calc.fdf"
+        
+    # 3. Definir dimensões da supercélula (entrada única separada por espaços)
+    dim_input = get_input("\nSupercell dimensions (e.g. '2 2 2') [default: 2 2 2]: ").strip()
+    
+    if not dim_input:
+        dim_x, dim_y, dim_z = 2, 2, 2
+    else:
+        try:
+            dims = [int(x) for x in dim_input.split()]
+            if len(dims) == 3:
+                dim_x, dim_y, dim_z = dims
+            else:
+                print(color_text("Please provide exactly 3 integers. Using default 2 2 2.", 'yellow'))
+                dim_x, dim_y, dim_z = 2, 2, 2
+        except ValueError:
+            print(color_text("Invalid input format. Using default 2 2 2.", 'yellow'))
+            dim_x, dim_y, dim_z = 2, 2, 2
+    
+    # 4. Definir distância de deslocamento
+    distance = get_float_input("\nDisplacement distance in Å [default: 0.01]: ", 0.01)
+    
+    # 5. Diretório dos pseudopotenciais
+    pseudo_dir = get_input("\nPseudopotentials directory [default: .]: ").strip()
+    if not pseudo_dir:
+        pseudo_dir = "."
+        
+    # 6. Preparar e executar o script
+    script_path = os.path.join(os.path.dirname(__file__), "phonons_create.py")
+    if not os.path.exists(script_path):
+        script_path = "phonons_create.py" # Fallback caso esteja rodando solto
+    
+    args = [
+        sys.executable, script_path,
+        "-s", structure_file,
+        "-c", calc_file,
+        "-dim", str(dim_x), str(dim_y), str(dim_z),
+        "-d", str(distance),
+        "-p", pseudo_dir,
+        "--no-intro"
+    ]
+    
+    print(color_text("\nGenerating phonon displacement folders...", 'green'))
+    
+    try:
+        subprocess.check_call(args)
+    except subprocess.CalledProcessError:
+        print(color_text("\nError executing phonon script.", 'red'))
+        print(color_text("Check if the input files exist and the pseudopotentials are available.", 'yellow'))
+        
+    input(color_text("\nPress Enter to continue...", 'green'))
+
+
 def run_cohesive_setup() -> None:
     """Interface for the Cohesive Energy Setup (cohesive_energy.py)"""
     print("\n" + "="*60)
@@ -1220,6 +1353,10 @@ PREPARATION_TOOLS = {
         'title': "Cohesive Energy Setup (stb-cohesive)", 
         'description': "Prepare folder structure and inputs for cohesive energy calculations.", 
         'func': run_cohesive_setup},
+    8: {
+        'title': "Phonon Displacement Generator",
+        'description': "Automate SIESTA phonon displacement folders using Phonopy.",
+        'func': run_phonon_generator}
          }
 
 
@@ -1254,7 +1391,10 @@ ANALYSIS_TOOLS = {
         'func': run_density_plotter},
    11: {'title': "Cohesive Energy Analysis (stb_cohesive_analysis)", 'description': "Process and calculate the final cohesive energy per atom.", 
         'func': run_cohesive_analysis},     
-        }
+   12: {'title': "Phonon Post-Processing",
+        'description': "Extract forces, generate FORCE_SETS, and calculate thermal properties.",
+        'func': run_phonon_postprocessing}    
+       }
     
 
 UTILITY_TOOLS = {

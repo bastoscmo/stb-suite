@@ -29,6 +29,7 @@ requirements:
     - spglib
     - sisl
     - pybader
+    - phonopy
     - setuptools
     - scipy==1.13.1
 
